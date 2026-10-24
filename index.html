@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zamplia Automation | INEXRA Research Gateway</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            zamplia: {
+              blue: '#1a7cc1',
+              dark: '#2d3748',
+              gray: '#4a5568',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      background: #f8fafc;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .card-shadow {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+    }
+
+    .card-shadow-md {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 8px 32px rgba(0,0,0,0.07);
+    }
+
+    .progress-stripe {
+      background: linear-gradient(
+        90deg,
+        #1a7cc1 0%,
+        #2196f3 40%,
+        #42a5f5 60%,
+        #1a7cc1 100%
+      );
+      background-size: 200% 100%;
+      animation: stripe-move 1.5s linear infinite;
+    }
+
+    @keyframes stripe-move {
+      0%   { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1a7cc1 0%, #1565a8 100%);
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(26,124,193,0.30);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(26,124,193,0.40);
+    }
+    .btn-primary:active {
+      transform: translateY(0px);
+    }
+
+    .btn-secondary {
+      border: 1.5px solid #e2e8f0;
+      background: white;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover {
+      border-color: #1a7cc1;
+      background: #f0f7ff;
+      color: #1a7cc1;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse-green 2s ease infinite;
+    }
+
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+      50%       { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+    }
+
+    .terminal-box {
+      background: #1e293b;
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    .terminal-box ::-webkit-scrollbar-track { background: #0f172a; }
+    .terminal-box ::-webkit-scrollbar-thumb { background: #334155; }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 640px) {
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    .metric-card {
+      background: white;
+      border: 1.5px solid #e8edf5;
+      border-radius: 12px;
+      padding: 16px 18px;
+      transition: border-color 0.2s;
+    }
+    .metric-card:hover {
+      border-color: #bdd8f5;
+    }
+
+    /* Radar animation for loading state */
+    .radar-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid rgba(26,124,193,0.25);
+      animation: radar-expand 2s ease-out infinite;
+    }
+    .radar-ring:nth-child(2) { animation-delay: 0.6s; }
+    .radar-ring:nth-child(3) { animation-delay: 1.2s; }
+
+    @keyframes radar-expand {
+      0%   { opacity: 1; transform: scale(0.3); }
+      100% { opacity: 0; transform: scale(1.6); }
+    }
+
+    .fade-in {
+      animation: fade-in 0.4s ease forwards;
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-green  { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .badge-blue   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-amber  { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+
+    .divider { height: 1px; background: #f1f5f9; margin: 0 -4px; }
+
+    /* Vercel badge at footer */
+    .trust-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 99px;
+      font-size: 11.5px;
+      font-weight: 500;
+      background: white;
+      border: 1.5px solid #e2e8f0;
+      color: #64748b;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col" style="background: linear-gradient(145deg, #f0f7ff 0%, #f8fafc 50%, #f5f3ff 100%); background-attachment: fixed;">
+
+  <!-- TOP HEADER BAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50" style="box-shadow: 0 1px 4px rgba(0,0,0,0.06);">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+
+      <!-- Zamplia Logo + INEXRA badge -->
+      <div class="flex items-center gap-3">
+        <img src="./zamplia-wordmark.png" alt="Zamplia" class="h-8 object-contain" />
+        <div class="h-5 w-px bg-slate-200"></div>
+        <div class="flex flex-col">
+          <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-widest leading-tight">Powered by</span>
+          <span class="text-sm font-bold text-zamplia-dark leading-tight" style="color: #1e293b;">INEXRA Automation</span>
+        </div>
+      </div>
+
+      <!-- Status Indicators -->
+      <div class="flex items-center gap-2 sm:gap-3">
+
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
+          <div class="status-dot"></div>
+          <span class="text-xs font-semibold text-green-700">INEXRA Engine Online</span>
+        </div>
+
+        <div class="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-500">
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i>
+          <span>Latency: <strong class="text-slate-700" id="latency-val">24ms</strong></span>
+        </div>
+
+        <button onclick="restartFetchProcess()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Re-Sync</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-3xl w-full mx-auto px-4 sm:px-6 py-8 flex-1 flex flex-col justify-center">
+
+    <!-- PAGE TITLE -->
+    <div class="mb-5 text-center sm:text-left">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
+        Zamplia Automation Gateway
+      </h1>
+      <p class="text-slate-500 text-sm mt-1">
+        Powered by INEXRA · Real-time survey routing &amp; respondent allocation engine
+      </p>
+    </div>
+
+    <!-- SECURITY NOTICE BANNER -->
+    <div class="mb-5 flex items-center justify-between px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-700">
+      <div class="flex items-center gap-2">
+        <i data-lucide="shield-check" class="w-4 h-4 text-blue-500 flex-shrink-0"></i>
+        <span>Session protected by <strong>INEXRA Anti-Fraud Engine</strong> &amp; Zamplia S2S Verification</span>
+      </div>
+      <span class="font-mono text-[10.5px] bg-blue-100 px-2 py-0.5 rounded border border-blue-300 text-blue-600 hidden sm:inline">
+        TLS 1.3 · SHA-256
+      </span>
+    </div>
+
+    <!-- MAIN CARD -->
+    <div class="bg-white rounded-2xl card-shadow-md overflow-hidden">
+
+      <!-- Card Top Accent Strip -->
+      <div class="h-1 w-full" style="background: linear-gradient(90deg, #1a7cc1 0%, #2196f3 50%, #42a5f5 100%);"></div>
+
+      <!-- ==== LOADING STATE ==== -->
+      <div id="loading-state" class="px-6 sm:px-8 py-10 text-center">
+
+        <!-- Radar pulse icon -->
+        <div class="relative w-20 h-20 mx-auto mb-5 flex items-center justify-center">
+          <div class="radar-ring inset-2"></div>
+          <div class="radar-ring inset-2"></div>
+          <div class="radar-ring inset-2"></div>
+          <div class="w-16 h-16 rounded-2xl bg-blue-50 border-2 border-blue-200 flex items-center justify-center z-10">
+            <i data-lucide="satellite" class="w-8 h-8 text-blue-500"></i>
+          </div>
+        </div>
+
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-1.5" id="fetch-title">
+          Fetching data from INEXRA Engine...
+        </h2>
+        <p class="text-slate-500 text-sm max-w-sm mx-auto mb-7" id="fetch-subtitle">
+          Querying the Zamplia allocation pool and validating respondent quota match...
+        </p>
+
+        <!-- Progress bar -->
+        <div class="max-w-md mx-auto mb-3">
+          <div class="flex justify-between text-xs text-slate-500 mb-1.5 font-mono">
+            <span id="step-label">Connecting to INEXRA Core...</span>
+            <span class="text-blue-600 font-bold" id="progress-percent">15%</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
+            <div id="progress-bar" class="progress-stripe h-2.5 rounded-full transition-all duration-300" style="width: 15%"></div>
+          </div>
+        </div>
+
+        <!-- Telemetry pills -->
+        <div class="flex flex-wrap items-center justify-center gap-2 mt-4 font-mono text-xs">
+          <span class="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse inline-block"></span>
+            api.inexra.internal
+          </span>
+          <span class="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500">
+            Zamplia REST v3
+          </span>
+          <span class="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center gap-1.5">
+            Quota: <strong class="text-amber-600" id="quota-badge">Verifying...</strong>
+          </span>
+        </div>
+
+      </div>
+
+
+      <!-- ==== READY STATE ==== -->
+      <div id="ready-state" class="hidden px-6 sm:px-8 py-7 fade-in">
+
+        <!-- Header row -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 mb-5 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-green-50 border-2 border-green-200 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
+            </div>
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-lg font-bold text-slate-800">Survey Matched Successfully!</h3>
+                <span class="badge badge-green">LIVE QUOTA</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">INEXRA pipeline has allocated this session for Zamplia Automated Completion.</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="badge badge-blue">
+              <i data-lucide="database" class="w-3 h-3"></i>
+              Synced from INEXRA
+            </span>
+          </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid-3 mb-5">
+
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs text-slate-500 font-medium">Respondent Reward</span>
+              <i data-lucide="dollar-sign" class="w-4 h-4 text-green-500"></i>
+            </div>
+            <div class="text-2xl font-extrabold text-green-600" id="survey-cpi">$2.40 USD</div>
+            <p class="text-[11px] text-slate-400 mt-0.5">240 INEXRA Points credited</p>
+          </div>
+
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs text-slate-500 font-medium">Estimated Duration</span>
+              <i data-lucide="clock" class="w-4 h-4 text-blue-500"></i>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-800">8 – 10 Mins</div>
+            <p class="text-[11px] text-slate-400 mt-0.5">Short screener + study</p>
+          </div>
+
+          <div class="metric-card">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs text-slate-500 font-medium">Match Rating</span>
+              <i data-lucide="activity" class="w-4 h-4 text-violet-500"></i>
+            </div>
+            <div class="text-2xl font-extrabold text-violet-600">96.4%</div>
+            <p class="text-[11px] text-slate-400 mt-0.5">High conversion propensity</p>
+          </div>
+
+        </div>
+
+        <!-- Metadata Table -->
+        <div class="rounded-xl border border-slate-200 overflow-hidden mb-5 text-sm">
+          <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+            <span class="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">Session Details</span>
+          </div>
+
+          <div class="divide-y divide-slate-100">
+            <div class="flex items-center justify-between px-4 py-3">
+              <span class="text-xs text-slate-500">Allocated Survey ID</span>
+              <span class="text-xs font-mono font-semibold text-blue-600" id="survey-id-val">ZAM-9842-INX</span>
+            </div>
+            <div class="flex items-center justify-between px-4 py-3">
+              <span class="text-xs text-slate-500">Assigned Respondent UID</span>
+              <span class="text-xs font-mono font-medium text-slate-700" id="respondent-id-val">RESP-847291-IX</span>
+            </div>
+            <div class="flex items-center justify-between px-4 py-3">
+              <span class="text-xs text-slate-500">Target Category / Industry</span>
+              <span class="text-xs font-semibold text-slate-700">Consumer Electronics &amp; Technology</span>
+            </div>
+            <div class="flex items-center justify-between px-4 py-3">
+              <span class="text-xs text-slate-500">Security / Geo Verification</span>
+              <span class="badge badge-green text-[11px]">
+                <i data-lucide="check" class="w-3 h-3"></i>
+                US / Tier-1 Residential Verified
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button onclick="startSurveyFlow()" class="btn-primary flex-1 py-3.5 px-6 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2">
+            Proceed to Survey Partner
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+
+          <button onclick="simulateCallback('complete')" class="btn-secondary py-3.5 px-5 rounded-xl text-slate-600 font-medium text-xs flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
+            Simulate Callback (Complete)
+          </button>
+        </div>
+
+      </div>
+
+
+      <!-- ==== CALLBACK STATE ==== -->
+      <div id="callback-state" class="hidden px-6 sm:px-8 py-10 text-center fade-in">
+
+        <div class="w-16 h-16 rounded-full bg-green-50 border-2 border-green-300 text-green-600 flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="badge-check" class="w-8 h-8"></i>
+        </div>
+
+        <h3 class="text-xl font-bold text-slate-800 mb-1.5">Survey Completion Registered!</h3>
+        <p class="text-slate-500 text-sm max-w-sm mx-auto mb-6">
+          Zamplia callback successfully received and validated by the INEXRA webhook processor.
+        </p>
+
+        <!-- Postback Details -->
+        <div class="max-w-md mx-auto terminal-box p-4 text-left text-[11.5px] space-y-1.5 mb-6">
+          <div class="text-green-400 font-semibold">[INEXRA Postback Received]</div>
+          <div class="text-slate-300">Status: <span class="text-white">COMPLETE</span></div>
+          <div class="text-slate-300">Reward: <span class="text-white">$2.40 USD (Allocated)</span></div>
+          <div class="text-slate-300">Tx Hash: <span class="text-cyan-400">tx_inx_771829a9b</span></div>
+          <div class="text-slate-300">Timestamp: <span class="text-slate-400" id="callback-time">--</span></div>
+        </div>
+
+        <button onclick="restartFetchProcess()" class="inline-flex items-center gap-2 py-2.5 px-6 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 transition">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          Start Another Session
+        </button>
+      </div>
+
+    </div>
+    <!-- END MAIN CARD -->
+
+
+    <!-- LIVE CONSOLE LOGS -->
+    <div class="mt-5 bg-white rounded-2xl card-shadow overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
+          <div class="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></div>
+          Live INEXRA Sync Console
+          <span class="text-slate-400 font-normal">&nbsp;· S2S Telemetry Log</span>
+        </div>
+        <button onclick="clearLogs()" class="text-[11px] text-slate-400 hover:text-slate-600 font-mono transition">
+          Clear
+        </button>
+      </div>
+
+      <!-- Terminal -->
+      <div class="terminal-box rounded-none px-4 py-3">
+        <div id="terminal-logs" class="h-28 overflow-y-auto space-y-1 text-slate-400 leading-relaxed pr-1">
+          <!-- Logs dynamically appended here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TEST CONTROLS -->
+    <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 px-1">
+      <div class="flex items-center gap-3">
+        <span class="text-slate-500">Simulate Redirect:</span>
+        <button onclick="simulateCallback('complete')" class="hover:text-green-600 underline decoration-dotted">Complete</button>
+        <button onclick="simulateCallback('terminate')" class="hover:text-red-500 underline decoration-dotted">Terminate</button>
+        <button onclick="simulateCallback('overquota')" class="hover:text-amber-600 underline decoration-dotted">Overquota</button>
+      </div>
+      <span class="text-slate-400">Runtime: <strong class="text-slate-500">Vercel Edge</strong></span>
+    </div>
+
+  </main>
+
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-200 bg-white py-5">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+
+        <!-- Brand -->
+        <div class="flex items-center gap-2.5">
+          <img src="./zamplia-wordmark.png" alt="Zamplia" class="h-6 object-contain opacity-70" />
+          <span class="text-xs text-slate-400">× INEXRA Research Inc. © 2026</span>
+        </div>
+
+        <!-- Trust Badges -->
+        <div class="flex flex-wrap justify-center gap-2">
+          <span class="trust-pill">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-500"></i>
+            INEXRA Fraud Prevention
+          </span>
+          <span class="trust-pill">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i>
+            GDPR & CCPA Certified
+          </span>
+          <span class="trust-pill">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400"></i>
+            256-Bit SSL
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- JAVASCRIPT -->
+  <script>
+    lucide.createIcons();
+
+    // Parse URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialSurveyId = urlParams.get('survey_id') || ('ZAM-' + Math.floor(1000 + Math.random() * 9000) + '-INX');
+    const initialUid      = urlParams.get('uid')       || ('RESP-' + Math.floor(100000 + Math.random() * 900000) + '-IX');
+
+    // DOM Refs
+    const $loading      = document.getElementById('loading-state');
+    const $ready        = document.getElementById('ready-state');
+    const $callback     = document.getElementById('callback-state');
+    const $bar          = document.getElementById('progress-bar');
+    const $pct          = document.getElementById('progress-percent');
+    const $stepLabel    = document.getElementById('step-label');
+    const $quotaBadge   = document.getElementById('quota-badge');
+    const $surveyId     = document.getElementById('survey-id-val');
+    const $respondentId = document.getElementById('respondent-id-val');
+    const $latency      = document.getElementById('latency-val');
+    const $cbTime       = document.getElementById('callback-time');
+    const $logs         = document.getElementById('terminal-logs');
+
+    // Set IDs
+    if ($surveyId)     $surveyId.innerText     = initialSurveyId;
+    if ($respondentId) $respondentId.innerText = initialUid;
+
+    // Log helper
+    function log(msg, type = 'muted') {
+      const now = new Date();
+      const t   = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3,'0');
+      const colorMap = {
+        muted:   'text-slate-500',
+        success: 'text-green-400',
+        cyan:    'text-cyan-400',
+        warn:    'text-amber-400',
+        indigo:  'text-indigo-400',
+        white:   'text-slate-200',
+      };
+      const el = document.createElement('div');
+      el.className = 'flex items-start gap-2';
+      el.innerHTML = `<span class="text-slate-600 flex-shrink-0">[${t}]</span><span class="${colorMap[type] || 'text-slate-400'}">${msg}</span>`;
+      $logs.appendChild(el);
+      $logs.scrollTop = $logs.scrollHeight;
+    }
+
+    function clearLogs() {
+      $logs.innerHTML = '';
+      log('Console cleared.', 'muted');
+    }
+
+    // Main simulation
+    function runFetchSimulation() {
+      $loading.classList.remove('hidden');
+      $ready.classList.add('hidden');
+      $callback.classList.add('hidden');
+
+      $bar.style.width = '12%';
+      $pct.innerText   = '12%';
+      $stepLabel.innerText = 'Connecting to INEXRA Core...';
+      $quotaBadge.innerText   = 'Verifying...';
+      $quotaBadge.className   = 'text-amber-600 font-semibold';
+
+      if ($latency) $latency.innerText = Math.floor(18 + Math.random() * 14) + 'ms';
+
+      log(`[INIT] Client session started. UID: ${initialUid}`, 'cyan');
+      log(`[HANDSHAKE] Requesting bearer token → auth.inexra.internal...`, 'muted');
+
+      setTimeout(() => {
+        $bar.style.width = '38%'; $pct.innerText = '38%';
+        $stepLabel.innerText = 'Fetching respondent payload from INEXRA Engine...';
+        log(`[AUTH] 200 OK · Token: inx_sec_${Math.random().toString(36).substring(7)}`, 'success');
+        log(`[INEXRA_DB] Querying Zamplia allocation pool...`, 'indigo');
+      }, 800);
+
+      setTimeout(() => {
+        $bar.style.width = '66%'; $pct.innerText = '66%';
+        $stepLabel.innerText = 'Validating Zamplia survey quota matrix...';
+        log(`[ENGINE] Retrieved 14 active inventory items. Filtering by LOI & CPI...`, 'muted');
+        log(`[QUOTA_MATCH] Primary allocation found → Survey #${initialSurveyId}`, 'cyan');
+        $quotaBadge.innerText = 'Available';
+        $quotaBadge.className = 'text-green-600 font-semibold';
+      }, 1700);
+
+      setTimeout(() => {
+        $bar.style.width = '88%'; $pct.innerText = '88%';
+        $stepLabel.innerText = 'Running anti-fraud & demographic verification...';
+        log(`[FRAUD_SHIELD] Fingerprint score: 0.02 (Legitimate participant)`, 'success');
+        log(`[GEO_CHECK] IP match confirmed · Tier-1 General Audience`, 'muted');
+      }, 2500);
+
+      setTimeout(() => {
+        $bar.style.width = '100%'; $pct.innerText = '100%';
+        $stepLabel.innerText = 'Payload synchronized successfully!';
+        log(`[GATEWAY] Survey payload ready. Zamplia routing handshake established.`, 'success');
+
+        setTimeout(() => {
+          $loading.classList.add('hidden');
+          $ready.classList.remove('hidden');
+          lucide.createIcons();
+        }, 450);
+      }, 3200);
+    }
+
+    function restartFetchProcess() {
+      const s = 'ZAM-' + Math.floor(1000 + Math.random() * 9000) + '-INX';
+      const u = 'RESP-' + Math.floor(100000 + Math.random() * 900000) + '-IX';
+      if ($surveyId)     $surveyId.innerText     = s;
+      if ($respondentId) $respondentId.innerText = u;
+      log('──────────────────────────', 'muted');
+      log('[RELOAD] Re-syncing session from INEXRA...', 'warn');
+      runFetchSimulation();
+    }
+
+    function startSurveyFlow() {
+      log(`[ROUTING] Respondent proceeding to Zamplia survey partner...`, 'cyan');
+      alert(`[INEXRA Router — Demo Mode]\n\nRedirecting to survey partner...\nSurvey ID: ${$surveyId?.innerText}\nRespondent: ${$respondentId?.innerText}\n\n(In production, this redirects to the live Zamplia survey link!)`);
+    }
+
+    function simulateCallback(type) {
+      if ($cbTime) $cbTime.innerText = new Date().toLocaleString();
+      $ready.classList.add('hidden');
+      $loading.classList.add('hidden');
+      $callback.classList.remove('hidden');
+
+      const messages = {
+        complete:  { msg: `[POSTBACK] status=complete · ID: ${$surveyId?.innerText}`, type: 'success', extra: '[WEBHOOK] Reward allocated. Points credited to respondent.'},
+        terminate: { msg: `[POSTBACK] status=terminate · Respondent disqualified by quota filter.`, type: 'warn', extra: '[WEBHOOK] No reward issued.'},
+        overquota: { msg: `[POSTBACK] status=overquota · Survey quota full.`, type: 'warn', extra: '[WEBHOOK] Redirecting to next available survey...'},
+      };
+      const m = messages[type] || messages.complete;
+      log(m.msg, m.type);
+      log(m.extra, 'muted');
+
+      lucide.createIcons();
+    }
+
+    // Boot on load
+    window.addEventListener('DOMContentLoaded', () => {
+      runFetchSimulation();
+    });
+  </script>
+
+</body>
+</html>

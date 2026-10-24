@@ -298,10 +298,10 @@
           <div class="flex items-center justify-end pt-2">
             <button 
               type="submit" 
-              class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition flex items-center gap-2"
+              class="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-md transition flex items-center gap-1.5"
             >
               <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Add Complete</span>
+              <span>Add</span>
             </button>
           </div>
         </form>
@@ -317,29 +317,9 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <button onclick="toggleJsonBatchMode()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 transition">
-              Batch JSON
-            </button>
             <button onclick="clearAllCompletes()" class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs font-medium text-rose-400 transition">
               Clear All
             </button>
-          </div>
-        </div>
-
-        <!-- JSON Batch Mode (Collapsed by default) -->
-        <div id="json-batch-container" class="hidden p-5 bg-slate-900 border-b border-slate-800 space-y-3">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-semibold text-slate-300">Raw JSON Data:</span>
-            <div class="flex items-center gap-2">
-              <button onclick="copyAdminJson()" class="text-blue-400 hover:text-blue-300">Copy</button>
-              <span class="text-slate-600">|</span>
-              <button onclick="loadSampleIntoAdminJson()" class="text-slate-400 hover:text-slate-300">Load Sample</button>
-            </div>
-          </div>
-          <textarea id="admin-json-textarea" class="w-full h-40 p-3 bg-slate-950 border border-slate-700 rounded-lg font-mono text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
-          <div class="flex justify-end gap-2">
-            <button onclick="toggleJsonBatchMode()" class="px-3 py-1.5 text-xs text-slate-400 hover:text-white">Cancel</button>
-            <button onclick="saveAdminJson()" class="px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-lg">Save &amp; Apply</button>
           </div>
         </div>
 
@@ -623,47 +603,6 @@
       });
 
       lucide.createIcons();
-    }
-
-    function toggleJsonBatchMode() {
-      const box = document.getElementById('json-batch-container');
-      if (box.classList.contains('hidden')) {
-        document.getElementById('admin-json-textarea').value = JSON.stringify(completesList, null, 2);
-        box.classList.remove('hidden');
-      } else {
-        box.classList.add('hidden');
-      }
-    }
-
-    function saveAdminJson() {
-      try {
-        const parsed = JSON.parse(document.getElementById('admin-json-textarea').value);
-        if (!Array.isArray(parsed)) {
-          alert('Error: Must be a JSON array [ { ... } ]');
-          return;
-        }
-        completesList = parsed;
-        saveCompletes();
-        toggleJsonBatchMode();
-      } catch (e) {
-        alert('Invalid JSON: ' + e.message);
-      }
-    }
-
-    function copyAdminJson() {
-      navigator.clipboard.writeText(document.getElementById('admin-json-textarea').value).then(() => {
-        alert('Copied to clipboard!');
-      });
-    }
-
-    function loadSampleIntoAdminJson() {
-      const sample = [
-        { id: 'ZAM-5116-INX', uid: 'RESP-847291-IX', category: 'Consumer Electronics', duration: '8m 42s', reward: '$2.40', cpi: 2.4, points: '240', time: '23:32:10', status: 'Verified' },
-        { id: 'ZAM-4820-INX', uid: 'RESP-639102-IX', category: 'Healthcare & Pharma', duration: '10m 15s', reward: '$3.10', cpi: 3.1, points: '310', time: '23:18:45', status: 'Verified' },
-        { id: 'ZAM-7731-INX', uid: 'RESP-192847-IX', category: 'Finance & Banking', duration: '9m 05s', reward: '$2.75', cpi: 2.75, points: '275', time: '22:56:12', status: 'Verified' },
-        { id: 'ZAM-3392-INX', uid: 'RESP-558291-IX', category: 'Automotive & EV', duration: '7m 50s', reward: '$2.20', cpi: 2.2, points: '220', time: '22:41:30', status: 'Verified' }
-      ];
-      document.getElementById('admin-json-textarea').value = JSON.stringify(sample, null, 2);
     }
 
     window.addEventListener('storage', (e) => {

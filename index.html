@@ -119,24 +119,16 @@
     .terminal-box ::-webkit-scrollbar-track { background: #0f172a; }
     .terminal-box ::-webkit-scrollbar-thumb { background: #334155; }
 
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-    @media (max-width: 640px) {
-      .grid-3 { grid-template-columns: 1fr; }
-    }
-
     .metric-card {
       background: white;
       border: 1.5px solid #e8edf5;
       border-radius: 12px;
       padding: 16px 18px;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     .metric-card:hover {
       border-color: #bdd8f5;
+      box-shadow: 0 2px 8px rgba(26,124,193,0.08);
     }
 
     /* Radar animation for loading state */
@@ -178,8 +170,6 @@
     .badge-blue   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
     .badge-amber  { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
 
-    .divider { height: 1px; background: #f1f5f9; margin: 0 -4px; }
-
     /* Vercel badge at footer */
     .trust-pill {
       display: inline-flex;
@@ -193,13 +183,27 @@
       border: 1.5px solid #e2e8f0;
       color: #64748b;
     }
+
+    /* New Complete Row Flash Animation */
+    @keyframes row-highlight {
+      0%   { background-color: rgba(34, 197, 94, 0.22); }
+      100% { background-color: transparent; }
+    }
+    .new-complete-row {
+      animation: row-highlight 3.5s ease-out;
+    }
+
+    .modal-backdrop {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+    }
   </style>
 </head>
 
 <body class="min-h-screen flex flex-col" style="background: linear-gradient(145deg, #f0f7ff 0%, #f8fafc 50%, #f5f3ff 100%); background-attachment: fixed;">
 
   <!-- TOP HEADER BAR -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-50" style="box-shadow: 0 1px 4px rgba(0,0,0,0.06);">
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40" style="box-shadow: 0 1px 4px rgba(0,0,0,0.06);">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
 
       <!-- Zamplia Logo + INEXRA badge -->
@@ -236,16 +240,25 @@
 
 
   <!-- MAIN CONTENT -->
-  <main class="max-w-3xl w-full mx-auto px-4 sm:px-6 py-8 flex-1 flex flex-col justify-center">
+  <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 py-7 flex-1 flex flex-col justify-start">
 
-    <!-- PAGE TITLE -->
-    <div class="mb-5 text-center sm:text-left">
-      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
-        Zamplia Automation Gateway
-      </h1>
-      <p class="text-slate-500 text-sm mt-1">
-        Powered by INEXRA · Real-time survey routing &amp; respondent allocation engine
-      </p>
+    <!-- PAGE TITLE & LIVE HEADER -->
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
+          Zamplia Automation Gateway
+        </h1>
+        <p class="text-slate-500 text-sm mt-1">
+          Powered by INEXRA · Real-time survey routing, respondent allocation &amp; completes tracking
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+          <span class="status-dot"></span>
+          Live Completes Sync Active
+        </span>
+      </div>
     </div>
 
     <!-- SECURITY NOTICE BANNER -->
@@ -259,7 +272,7 @@
       </span>
     </div>
 
-    <!-- MAIN CARD -->
+    <!-- MAIN ALLOCATION CARD -->
     <div class="bg-white rounded-2xl card-shadow-md overflow-hidden">
 
       <!-- Card Top Accent Strip -->
@@ -339,8 +352,8 @@
           </div>
         </div>
 
-        <!-- Metrics Grid -->
-        <div class="grid-3 mb-5">
+        <!-- Metrics Grid (Now 4 Cards including Completes!) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
 
           <div class="metric-card">
             <div class="flex items-center justify-between mb-2">
@@ -369,18 +382,36 @@
             <p class="text-[11px] text-slate-400 mt-0.5">High conversion propensity</p>
           </div>
 
+          <div class="metric-card bg-gradient-to-br from-white to-emerald-50/40 border-emerald-200/80">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs text-slate-600 font-semibold">Today's Completes</span>
+              <i data-lucide="check-check" class="w-4 h-4 text-emerald-600"></i>
+            </div>
+            <div class="text-2xl font-extrabold text-emerald-600 flex items-baseline gap-1.5">
+              <span id="quick-completes-stat">48</span>
+              <span class="text-xs font-normal text-slate-400">/ 60 target</span>
+            </div>
+            <p class="text-[11px] text-emerald-700 font-medium mt-0.5 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+              80% Daily Quota Filled
+            </p>
+          </div>
+
         </div>
 
         <!-- Metadata Table -->
         <div class="rounded-xl border border-slate-200 overflow-hidden mb-5 text-sm">
           <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
             <span class="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">Session Details</span>
+            <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> INEXRA Live Quota Active
+            </span>
           </div>
 
           <div class="divide-y divide-slate-100">
             <div class="flex items-center justify-between px-4 py-3">
               <span class="text-xs text-slate-500">Allocated Survey ID</span>
-              <span class="text-xs font-mono font-semibold text-blue-600" id="survey-id-val">ZAM-9842-INX</span>
+              <span class="text-xs font-mono font-semibold text-blue-600" id="survey-id-val">ZAM-5116-INX</span>
             </div>
             <div class="flex items-center justify-between px-4 py-3">
               <span class="text-xs text-slate-500">Assigned Respondent UID</span>
@@ -388,7 +419,17 @@
             </div>
             <div class="flex items-center justify-between px-4 py-3">
               <span class="text-xs text-slate-500">Target Category / Industry</span>
-              <span class="text-xs font-semibold text-slate-700">Consumer Electronics &amp; Technology</span>
+              <span class="text-xs font-semibold text-slate-700" id="session-category-val">Consumer Electronics &amp; Technology</span>
+            </div>
+            <div class="flex items-center justify-between px-4 py-3">
+              <span class="text-xs text-slate-500">Survey Completes Quota</span>
+              <div class="flex items-center gap-2.5">
+                <div class="w-24 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200 hidden sm:block">
+                  <div class="bg-emerald-500 h-2 rounded-full" id="session-quota-bar" style="width: 80%"></div>
+                </div>
+                <span class="text-xs font-semibold text-slate-700" id="session-quota-text">48 / 60 Completed</span>
+                <span class="badge badge-green text-[10px]">80%</span>
+              </div>
             </div>
             <div class="flex items-center justify-between px-4 py-3">
               <span class="text-xs text-slate-500">Security / Geo Verification</span>
@@ -432,8 +473,8 @@
         <div class="max-w-md mx-auto terminal-box p-4 text-left text-[11.5px] space-y-1.5 mb-6">
           <div class="text-green-400 font-semibold">[INEXRA Postback Received]</div>
           <div class="text-slate-300">Status: <span class="text-white">COMPLETE</span></div>
-          <div class="text-slate-300">Reward: <span class="text-white">$2.40 USD (Allocated)</span></div>
-          <div class="text-slate-300">Tx Hash: <span class="text-cyan-400">tx_inx_771829a9b</span></div>
+          <div class="text-slate-300">Reward: <span class="text-white" id="cb-reward-text">$2.40 USD (Allocated)</span></div>
+          <div class="text-slate-300">Tx Hash: <span class="text-cyan-400" id="cb-tx-hash">tx_inx_771829a9b</span></div>
           <div class="text-slate-300">Timestamp: <span class="text-slate-400" id="callback-time">--</span></div>
         </div>
 
@@ -447,8 +488,125 @@
     <!-- END MAIN CARD -->
 
 
+    <!-- ========================================================================= -->
+    <!-- ==== INEXRA DAILY COMPLETES LEDGER PANEL (AS IN INEXRA DASHBOARD) ==== -->
+    <!-- ========================================================================= -->
+    <div class="mt-6 bg-white rounded-2xl card-shadow-md overflow-hidden border border-slate-200/90">
+
+      <!-- Section Header -->
+      <div class="px-5 sm:px-6 py-4 bg-slate-50/90 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 flex-shrink-0">
+            <i data-lucide="layers" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-base font-bold text-slate-800">INEXRA Panel — Daily Completes Ledger</h2>
+              <span class="badge badge-green text-[10.5px]">Live Sync Active</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Real-time breakdown of completed surveys, respondent payouts &amp; daily quota performance</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2">
+          <button onclick="openAddCompleteModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium text-xs hover:bg-blue-700 shadow-sm transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Add Complete</span>
+          </button>
+          <button onclick="openDataEditorModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium text-xs hover:bg-slate-50 hover:border-slate-300 transition">
+            <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span>Daily Dummy Data</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Top KPI Metrics Banner -->
+      <div class="grid grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 bg-white border-b border-slate-100">
+        <div class="px-5 py-3.5">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Today's Completes</div>
+          <div class="text-xl font-bold text-slate-800 mt-0.5 flex items-baseline gap-2">
+            <span id="panel-total-completes">48</span>
+            <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/50">+6 / hr</span>
+          </div>
+        </div>
+        <div class="px-5 py-3.5">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Daily Payout</div>
+          <div class="text-xl font-bold text-emerald-600 mt-0.5" id="panel-total-revenue">$115.20 USD</div>
+        </div>
+        <div class="px-5 py-3.5">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Avg Completion Time</div>
+          <div class="text-xl font-bold text-slate-800 mt-0.5" id="panel-avg-time">8m 42s</div>
+        </div>
+        <div class="px-5 py-3.5">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Conversion (IR)</div>
+          <div class="text-xl font-bold text-blue-600 mt-0.5" id="panel-ir-rate">89.4%</div>
+        </div>
+      </div>
+
+      <!-- Search & Filter Controls -->
+      <div class="px-5 py-3 bg-white border-b border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-sm">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+          <input type="text" id="completes-search-input" onkeyup="filterCompletesTable()" placeholder="Search by Survey ID, UID or Category..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-blue-400 transition" />
+        </div>
+
+        <!-- Category Chips -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs text-slate-600">
+          <button onclick="setCategoryFilter('all')" id="filter-tab-all" class="category-filter-tab px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">All (<span id="filter-count-all">10</span>)</button>
+          <button onclick="setCategoryFilter('Tech')" id="filter-tab-Tech" class="category-filter-tab px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Tech</button>
+          <button onclick="setCategoryFilter('Healthcare')" id="filter-tab-Healthcare" class="category-filter-tab px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Healthcare</button>
+          <button onclick="setCategoryFilter('Finance')" id="filter-tab-Finance" class="category-filter-tab px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Finance</button>
+          <button onclick="setCategoryFilter('Retail')" id="filter-tab-Retail" class="category-filter-tab px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Retail</button>
+        </div>
+      </div>
+
+      <!-- Completes Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 text-[11px] uppercase tracking-wider">
+            <tr>
+              <th class="py-2.5 px-4">Survey ID</th>
+              <th class="py-2.5 px-4">Respondent UID</th>
+              <th class="py-2.5 px-4">Category</th>
+              <th class="py-2.5 px-4">Completed At</th>
+              <th class="py-2.5 px-4">Duration</th>
+              <th class="py-2.5 px-4">Reward / CPI</th>
+              <th class="py-2.5 px-4">INEXRA Status</th>
+              <th class="py-2.5 px-4 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="completes-table-body" class="divide-y divide-slate-100">
+            <!-- Dynamic rows rendered via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Footer -->
+      <div class="px-5 py-3 bg-slate-50/70 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+        <div class="flex items-center gap-2">
+          <span>Showing <strong class="text-slate-700" id="displayed-completes-count">10</strong> recorded completes</span>
+          <span class="text-slate-300">·</span>
+          <span class="text-emerald-600 font-medium flex items-center gap-1">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> All S2S Verified
+          </span>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="exportCompletesJSON()" class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Export JSON
+          </button>
+          <span class="text-slate-300">|</span>
+          <button onclick="resetToDefaultData()" class="text-xs text-slate-500 hover:text-slate-700">
+            Reset Sample Data
+          </button>
+        </div>
+      </div>
+    </div>
+
+
     <!-- LIVE CONSOLE LOGS -->
-    <div class="mt-5 bg-white rounded-2xl card-shadow overflow-hidden">
+    <div class="mt-6 bg-white rounded-2xl card-shadow overflow-hidden">
       <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
         <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
           <div class="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></div>
@@ -471,19 +629,19 @@
     <!-- TEST CONTROLS -->
     <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 px-1">
       <div class="flex items-center gap-3">
-        <span class="text-slate-500">Simulate Redirect:</span>
-        <button onclick="simulateCallback('complete')" class="hover:text-green-600 underline decoration-dotted">Complete</button>
-        <button onclick="simulateCallback('terminate')" class="hover:text-red-500 underline decoration-dotted">Terminate</button>
-        <button onclick="simulateCallback('overquota')" class="hover:text-amber-600 underline decoration-dotted">Overquota</button>
+        <span class="text-slate-500 font-medium">Simulate Redirect:</span>
+        <button onclick="simulateCallback('complete')" class="hover:text-green-600 underline decoration-dotted font-medium">Complete</button>
+        <button onclick="simulateCallback('terminate')" class="hover:text-red-500 underline decoration-dotted font-medium">Terminate</button>
+        <button onclick="simulateCallback('overquota')" class="hover:text-amber-600 underline decoration-dotted font-medium">Overquota</button>
       </div>
-      <span class="text-slate-400">Runtime: <strong class="text-slate-500">Vercel Edge</strong></span>
+      <span class="text-slate-400">Runtime: <strong class="text-slate-600 font-semibold">Vercel Edge</strong></span>
     </div>
 
   </main>
 
 
   <!-- FOOTER -->
-  <footer class="border-t border-slate-200 bg-white py-5">
+  <footer class="border-t border-slate-200 bg-white py-5 mt-8">
     <div class="max-w-5xl mx-auto px-4 sm:px-6">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
 
@@ -501,7 +659,7 @@
           </span>
           <span class="trust-pill">
             <i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i>
-            GDPR & CCPA Certified
+            GDPR &amp; CCPA Certified
           </span>
           <span class="trust-pill">
             <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400"></i>
@@ -514,13 +672,415 @@
   </footer>
 
 
-  <!-- JAVASCRIPT -->
-  <script>
-    lucide.createIcons();
+  <!-- ========================================================================= -->
+  <!-- ==== MODAL 1: ADD NEW COMPLETE MODAL ==== -->
+  <!-- ========================================================================= -->
+  <div id="modal-add-complete" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 card-shadow-md border border-slate-200 fade-in">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800">Add New Complete</h3>
+        </div>
+        <button onclick="closeAddCompleteModal()" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
 
+      <form id="form-add-complete" onsubmit="handleAddCompleteSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Survey ID</label>
+          <input type="text" id="input-new-id" required class="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 font-mono" placeholder="ZAM-XXXX-INX" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Respondent UID</label>
+          <input type="text" id="input-new-uid" required class="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 font-mono" placeholder="RESP-XXXXXX-IX" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+            <select id="input-new-category" class="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 bg-white">
+              <option value="Consumer Electronics">Consumer Tech</option>
+              <option value="Healthcare & Pharma">Healthcare</option>
+              <option value="Finance & Banking">Finance</option>
+              <option value="Automotive & EV">Automotive</option>
+              <option value="Cloud Computing B2B">B2B Software</option>
+              <option value="Retail & E-Commerce">Retail</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Reward / CPI</label>
+            <input type="text" id="input-new-reward" required value="$2.40" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500" placeholder="$2.40" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Duration (LOI)</label>
+            <input type="text" id="input-new-duration" required value="8m 30s" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500" placeholder="8m 30s" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Completion Time</label>
+            <input type="text" id="input-new-time" required class="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500" placeholder="23:30:00" />
+          </div>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeAddCompleteModal()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
+            Save Complete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- ==== MODAL 2: DAILY DUMMY DATA JSON EDITOR MODAL ==== -->
+  <!-- ========================================================================= -->
+  <div id="modal-data-editor" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 card-shadow-md border border-slate-200 fade-in flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <i data-lucide="database" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-800">Manage Daily Dummy Completes Data</h3>
+            <p class="text-[11px] text-slate-400">Yahan se aap roz ka dummy data edit, paste ya add kar sakte hain.</p>
+          </div>
+        </div>
+        <button onclick="closeDataEditorModal()" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="text-xs text-slate-500 mb-2">
+        JSON format mein data update karein aur <strong>"Save &amp; Update UI"</strong> dabayein:
+      </div>
+
+      <textarea id="json-editor-textarea" class="flex-1 w-full p-3 font-mono text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 leading-relaxed min-h-[260px]"></textarea>
+
+      <div class="pt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 mt-3">
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="copyEditorJSON()" class="px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-lg flex items-center gap-1 transition">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Copy JSON</span>
+          </button>
+          <button type="button" onclick="loadSampleDataIntoEditor()" class="px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-lg transition">
+            Load Sample Set
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeDataEditorModal()" class="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">
+            Cancel
+          </button>
+          <button type="button" onclick="saveEditorJSON()" class="px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
+            Save &amp; Update UI
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT LOGIC -->
+  <!-- ========================================================================= -->
+  <script>
+    // =========================================================================
+    // 📋 INEXRA DAILY DUMMY COMPLETES DATA (DEFAULT)
+    // 👉 Roz ka data yahan easily change ya add kar sakte hain:
+    // =========================================================================
+    const DEFAULT_COMPLETES_DATA = [
+      { id: 'ZAM-5116-INX', uid: 'RESP-847291-IX', category: 'Consumer Tech', duration: '8m 42s', reward: '$2.40', points: '240', time: '23:32:10', status: 'Verified' },
+      { id: 'ZAM-4820-INX', uid: 'RESP-639102-IX', category: 'Healthcare & Pharma', duration: '10m 15s', reward: '$3.10', points: '310', time: '23:18:45', status: 'Verified' },
+      { id: 'ZAM-7731-INX', uid: 'RESP-192847-IX', category: 'Finance & Banking', duration: '9m 05s', reward: '$2.75', points: '275', time: '22:56:12', status: 'Verified' },
+      { id: 'ZAM-3392-INX', uid: 'RESP-558291-IX', category: 'Automotive & EV', duration: '7m 50s', reward: '$2.20', points: '220', time: '22:41:30', status: 'Verified' },
+      { id: 'ZAM-8910-INX', uid: 'RESP-339182-IX', category: 'Cloud Computing B2B', duration: '12m 10s', reward: '$4.50', points: '450', time: '22:25:08', status: 'Verified' },
+      { id: 'ZAM-2401-INX', uid: 'RESP-772910-IX', category: 'Retail & E-Commerce', duration: '6m 30s', reward: '$1.80', points: '180', time: '22:08:40', status: 'Verified' },
+      { id: 'ZAM-6194-INX', uid: 'RESP-482019-IX', category: 'Food & Beverage', duration: '8m 10s', reward: '$2.40', points: '240', time: '21:52:19', status: 'Verified' },
+      { id: 'ZAM-1048-INX', uid: 'RESP-993821-IX', category: 'Consumer Tech', duration: '9m 40s', reward: '$2.50', points: '250', time: '21:30:05', status: 'Verified' },
+      { id: 'ZAM-9082-INX', uid: 'RESP-284710-IX', category: 'Travel & Hospitality', duration: '11m 00s', reward: '$3.00', points: '300', time: '21:12:44', status: 'Verified' },
+      { id: 'ZAM-4412-INX', uid: 'RESP-619283-IX', category: 'Telecom & 5G', duration: '8m 20s', reward: '$2.30', points: '230', time: '20:55:18', status: 'Verified' }
+    ];
+
+    // Initialize State
+    let completesData = [];
+    let activeFilter = 'all';
+
+    function loadCompletesData() {
+      try {
+        const stored = localStorage.getItem('inexra_daily_completes');
+        if (stored) {
+          completesData = JSON.parse(stored);
+        } else {
+          completesData = JSON.parse(JSON.stringify(DEFAULT_COMPLETES_DATA));
+        }
+      } catch (e) {
+        completesData = JSON.parse(JSON.stringify(DEFAULT_COMPLETES_DATA));
+      }
+    }
+
+    function saveCompletesData() {
+      try {
+        localStorage.setItem('inexra_daily_completes', JSON.stringify(completesData));
+      } catch (e) {
+        console.warn('LocalStorage error:', e);
+      }
+      updateCompletesUI();
+    }
+
+    function resetToDefaultData() {
+      if (confirm('Reset to default sample completes data?')) {
+        completesData = JSON.parse(JSON.stringify(DEFAULT_COMPLETES_DATA));
+        saveCompletesData();
+        log('[LEDGER] Reset to default sample completes.', 'warn');
+      }
+    }
+
+    // Render Table and Stats
+    function updateCompletesUI() {
+      const searchVal = (document.getElementById('completes-search-input')?.value || '').toLowerCase().trim();
+
+      const tbody = document.getElementById('completes-table-body');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+
+      let filtered = completesData.filter(item => {
+        // Category filter
+        if (activeFilter !== 'all' && !item.category.toLowerCase().includes(activeFilter.toLowerCase())) {
+          return false;
+        }
+        // Search filter
+        if (searchVal) {
+          const combined = (item.id + ' ' + item.uid + ' ' + item.category + ' ' + item.reward).toLowerCase();
+          if (!combined.includes(searchVal)) return false;
+        }
+        return true;
+      });
+
+      // Calculate totals
+      let totalRev = 0;
+      completesData.forEach(item => {
+        const num = parseFloat((item.reward || '$0').replace(/[^0-9.]/g, '')) || 0;
+        totalRev += num;
+      });
+
+      // Update counters
+      const totalCount = completesData.length;
+      const countEl = document.getElementById('panel-total-completes');
+      const revEl   = document.getElementById('panel-total-revenue');
+      const dispEl  = document.getElementById('displayed-completes-count');
+      const quickEl = document.getElementById('quick-completes-stat');
+      const quotaText = document.getElementById('session-quota-text');
+      const quotaBar = document.getElementById('session-quota-bar');
+
+      if (countEl) countEl.innerText = totalCount;
+      if (revEl)   revEl.innerText = '$' + totalRev.toFixed(2) + ' USD';
+      if (dispEl)  dispEl.innerText = filtered.length;
+      if (quickEl) quickEl.innerText = totalCount;
+      if (quotaText) quotaText.innerText = `${totalCount} / 60 Completed`;
+      if (quotaBar) {
+        const pct = Math.min(100, Math.round((totalCount / 60) * 100));
+        quotaBar.style.width = pct + '%';
+      }
+
+      // Filter tabs counts
+      const countAll = document.getElementById('filter-count-all');
+      if (countAll) countAll.innerText = totalCount;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center py-8 text-slate-400">
+              <i data-lucide="folder-search" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+              No survey completes found matching current filters.
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      filtered.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition duration-150 ' + (row._isNew ? 'new-complete-row' : '');
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono font-bold text-blue-600">
+            <div class="flex items-center gap-1.5">
+              <span>${row.id}</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-blue-50 text-blue-600 font-sans font-medium border border-blue-200">Zamplia</span>
+            </div>
+          </td>
+          <td class="py-3 px-4 font-mono text-slate-600">${row.uid}</td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center gap-1 text-slate-700 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+              ${row.category}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-slate-500 font-mono text-[11px]">${row.time}</td>
+          <td class="py-3 px-4 text-slate-600 font-medium">${row.duration}</td>
+          <td class="py-3 px-4 font-bold text-green-600">
+            ${row.reward}
+            <span class="text-[10px] font-normal text-slate-400 block">${row.points || '240'} pts</span>
+          </td>
+          <td class="py-3 px-4">
+            <span class="badge badge-green text-[10.5px]">
+              <i data-lucide="check" class="w-3 h-3"></i>
+              ${row.status || 'Verified'}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="removeCompleteRecord('${row.id}')" title="Delete record" class="p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 transition">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+    }
+
+    function removeCompleteRecord(id) {
+      if (confirm(`Remove complete record ${id}?`)) {
+        completesData = completesData.filter(item => item.id !== id);
+        saveCompletesData();
+        log(`[LEDGER] Removed record: ${id}`, 'warn');
+      }
+    }
+
+    function setCategoryFilter(cat) {
+      activeFilter = cat;
+      document.querySelectorAll('.category-filter-tab').forEach(btn => {
+        btn.classList.remove('bg-blue-100', 'text-blue-700', 'font-semibold');
+        btn.classList.add('bg-slate-100', 'text-slate-600');
+      });
+
+      const activeBtn = document.getElementById('filter-tab-' + cat);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
+        activeBtn.classList.add('bg-blue-100', 'text-blue-700', 'font-semibold');
+      }
+      updateCompletesUI();
+    }
+
+    function filterCompletesTable() {
+      updateCompletesUI();
+    }
+
+    // Modal Add Complete Handlers
+    function openAddCompleteModal() {
+      const randNum = Math.floor(1000 + Math.random() * 9000);
+      const randResp = Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('input-new-id').value = 'ZAM-' + randNum + '-INX';
+      document.getElementById('input-new-uid').value = 'RESP-' + randResp + '-IX';
+      document.getElementById('input-new-time').value = new Date().toTimeString().split(' ')[0];
+      document.getElementById('modal-add-complete').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeAddCompleteModal() {
+      document.getElementById('modal-add-complete').classList.add('hidden');
+    }
+
+    function handleAddCompleteSubmit(e) {
+      e.preventDefault();
+      const id       = document.getElementById('input-new-id').value.trim();
+      const uid      = document.getElementById('input-new-uid').value.trim();
+      const category = document.getElementById('input-new-category').value;
+      const reward   = document.getElementById('input-new-reward').value.trim();
+      const duration = document.getElementById('input-new-duration').value.trim();
+      const time     = document.getElementById('input-new-time').value.trim();
+
+      const newRecord = {
+        id, uid, category, duration, reward,
+        points: String(Math.round((parseFloat(reward.replace(/[^0-9.]/g,'')) || 2.4) * 100)),
+        time,
+        status: 'Verified',
+        _isNew: true
+      };
+
+      completesData.unshift(newRecord);
+      saveCompletesData();
+      closeAddCompleteModal();
+      log(`[LEDGER] Manual complete added: ${id} (${reward})`, 'success');
+    }
+
+    // Modal JSON Editor Handlers
+    function openDataEditorModal() {
+      const txt = document.getElementById('json-editor-textarea');
+      // Clean temporary flags before showing
+      const cleanData = completesData.map(({ _isNew, ...rest }) => rest);
+      txt.value = JSON.stringify(cleanData, null, 2);
+      document.getElementById('modal-data-editor').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeDataEditorModal() {
+      document.getElementById('modal-data-editor').classList.add('hidden');
+    }
+
+    function saveEditorJSON() {
+      const txt = document.getElementById('json-editor-textarea');
+      try {
+        const parsed = JSON.parse(txt.value);
+        if (!Array.isArray(parsed)) {
+          alert('Error: Data must be a JSON array of objects ([ { ... }, { ... } ])');
+          return;
+        }
+        completesData = parsed;
+        saveCompletesData();
+        closeDataEditorModal();
+        log(`[LEDGER] Daily dummy data updated successfully (${parsed.length} records).`, 'success');
+      } catch (err) {
+        alert('Invalid JSON! Please check format:\n' + err.message);
+      }
+    }
+
+    function copyEditorJSON() {
+      const txt = document.getElementById('json-editor-textarea');
+      navigator.clipboard.writeText(txt.value).then(() => {
+        alert('JSON copied to clipboard! Aap ise index.html mein bhi paste kar sakte hain.');
+      });
+    }
+
+    function loadSampleDataIntoEditor() {
+      const txt = document.getElementById('json-editor-textarea');
+      txt.value = JSON.stringify(DEFAULT_COMPLETES_DATA, null, 2);
+    }
+
+    function exportCompletesJSON() {
+      const cleanData = completesData.map(({ _isNew, ...rest }) => rest);
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cleanData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `inexra_completes_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+
+    // =========================================================================
+    // SURVEY SIMULATION ENGINE
+    // =========================================================================
     // Parse URL params
     const urlParams = new URLSearchParams(window.location.search);
-    const initialSurveyId = urlParams.get('survey_id') || ('ZAM-' + Math.floor(1000 + Math.random() * 9000) + '-INX');
+    const initialSurveyId = urlParams.get('survey_id') || 'ZAM-5116-INX';
     const initialUid      = urlParams.get('uid')       || ('RESP-' + Math.floor(100000 + Math.random() * 900000) + '-IX');
 
     // DOM Refs
@@ -556,13 +1116,17 @@
       const el = document.createElement('div');
       el.className = 'flex items-start gap-2';
       el.innerHTML = `<span class="text-slate-600 flex-shrink-0">[${t}]</span><span class="${colorMap[type] || 'text-slate-400'}">${msg}</span>`;
-      $logs.appendChild(el);
-      $logs.scrollTop = $logs.scrollHeight;
+      if ($logs) {
+        $logs.appendChild(el);
+        $logs.scrollTop = $logs.scrollHeight;
+      }
     }
 
     function clearLogs() {
-      $logs.innerHTML = '';
-      log('Console cleared.', 'muted');
+      if ($logs) {
+        $logs.innerHTML = '';
+        log('Console cleared.', 'muted');
+      }
     }
 
     // Main simulation
@@ -579,7 +1143,7 @@
 
       if ($latency) $latency.innerText = Math.floor(18 + Math.random() * 14) + 'ms';
 
-      log(`[INIT] Client session started. UID: ${initialUid}`, 'cyan');
+      log(`[INIT] Client session started. UID: ${$respondentId?.innerText || initialUid}`, 'cyan');
       log(`[HANDSHAKE] Requesting bearer token → auth.inexra.internal...`, 'muted');
 
       setTimeout(() => {
@@ -587,23 +1151,23 @@
         $stepLabel.innerText = 'Fetching respondent payload from INEXRA Engine...';
         log(`[AUTH] 200 OK · Token: inx_sec_${Math.random().toString(36).substring(7)}`, 'success');
         log(`[INEXRA_DB] Querying Zamplia allocation pool...`, 'indigo');
-      }, 800);
+      }, 700);
 
       setTimeout(() => {
         $bar.style.width = '66%'; $pct.innerText = '66%';
         $stepLabel.innerText = 'Validating Zamplia survey quota matrix...';
         log(`[ENGINE] Retrieved 14 active inventory items. Filtering by LOI & CPI...`, 'muted');
-        log(`[QUOTA_MATCH] Primary allocation found → Survey #${initialSurveyId}`, 'cyan');
+        log(`[QUOTA_MATCH] Primary allocation found → Survey #${$surveyId?.innerText || initialSurveyId}`, 'cyan');
         $quotaBadge.innerText = 'Available';
         $quotaBadge.className = 'text-green-600 font-semibold';
-      }, 1700);
+      }, 1500);
 
       setTimeout(() => {
         $bar.style.width = '88%'; $pct.innerText = '88%';
         $stepLabel.innerText = 'Running anti-fraud & demographic verification...';
         log(`[FRAUD_SHIELD] Fingerprint score: 0.02 (Legitimate participant)`, 'success');
         log(`[GEO_CHECK] IP match confirmed · Tier-1 General Audience`, 'muted');
-      }, 2500);
+      }, 2200);
 
       setTimeout(() => {
         $bar.style.width = '100%'; $pct.innerText = '100%';
@@ -614,8 +1178,8 @@
           $loading.classList.add('hidden');
           $ready.classList.remove('hidden');
           lucide.createIcons();
-        }, 450);
-      }, 3200);
+        }, 400);
+      }, 2800);
     }
 
     function restartFetchProcess() {
@@ -630,11 +1194,12 @@
 
     function startSurveyFlow() {
       log(`[ROUTING] Respondent proceeding to Zamplia survey partner...`, 'cyan');
-      alert(`[INEXRA Router — Demo Mode]\n\nRedirecting to survey partner...\nSurvey ID: ${$surveyId?.innerText}\nRespondent: ${$respondentId?.innerText}\n\n(In production, this redirects to the live Zamplia survey link!)`);
+      alert(`[INEXRA Router — Live Simulation]\n\nRedirecting to survey partner...\nSurvey ID: ${$surveyId?.innerText}\nRespondent: ${$respondentId?.innerText}\n\n(In production, this automatically routes through the Zamplia partner live link!)`);
     }
 
     function simulateCallback(type) {
-      if ($cbTime) $cbTime.innerText = new Date().toLocaleString();
+      const nowStr = new Date().toLocaleString();
+      if ($cbTime) $cbTime.innerText = nowStr;
       $ready.classList.add('hidden');
       $loading.classList.add('hidden');
       $callback.classList.remove('hidden');
@@ -648,12 +1213,35 @@
       log(m.msg, m.type);
       log(m.extra, 'muted');
 
+      // If complete, dynamically add to Completes Ledger!
+      if (type === 'complete') {
+        const curId  = $surveyId?.innerText || ('ZAM-' + Math.floor(1000 + Math.random() * 9000) + '-INX');
+        const curUid = $respondentId?.innerText || ('RESP-' + Math.floor(100000 + Math.random() * 900000) + '-IX');
+        const newComplete = {
+          id: curId,
+          uid: curUid,
+          category: 'Consumer Electronics',
+          duration: '8m 45s',
+          reward: '$2.40',
+          points: '240',
+          time: new Date().toTimeString().split(' ')[0],
+          status: 'Verified',
+          _isNew: true
+        };
+        completesData.unshift(newComplete);
+        saveCompletesData();
+        log(`[LEDGER] Live completion registered & added to daily table: ${curId}`, 'success');
+      }
+
       lucide.createIcons();
     }
 
     // Boot on load
     window.addEventListener('DOMContentLoaded', () => {
+      loadCompletesData();
+      updateCompletesUI();
       runFetchSimulation();
+      lucide.createIcons();
     });
   </script>
 

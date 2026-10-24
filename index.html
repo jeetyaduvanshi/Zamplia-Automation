@@ -653,29 +653,34 @@
     let targetQuota   = 50;
     let activeFilter  = 'all';
 
-    // Load data strictly from active storage
+    // 5 Default Random Surveys (Average CPI: $0.87 USD, range $0.75 to $1.00)
+    const DEFAULT_COMPLETES = [
+      { id: 'ZAM-5116-INX', uid: 'RESP-847291-IX', category: 'Consumer Electronics', duration: '7m 45s', reward: '$0.85', cpi: 0.85, points: '85', time: '23:32:10', status: 'Verified' },
+      { id: 'ZAM-4820-INX', uid: 'RESP-639102-IX', category: 'Retail & Shopping', duration: '6m 30s', reward: '$0.75', cpi: 0.75, points: '75', time: '23:18:45', status: 'Verified' },
+      { id: 'ZAM-7731-INX', uid: 'RESP-192847-IX', category: 'Food & Beverage', duration: '8m 15s', reward: '$0.95', cpi: 0.95, points: '95', time: '22:56:12', status: 'Verified' },
+      { id: 'ZAM-3392-INX', uid: 'RESP-558291-IX', category: 'Media & Entertainment', duration: '7m 10s', reward: '$0.80', cpi: 0.80, points: '80', time: '22:41:30', status: 'Verified' },
+      { id: 'ZAM-8910-INX', uid: 'RESP-339182-IX', category: 'Lifestyle & Fitness', duration: '9m 20s', reward: '$1.00', cpi: 1.00, points: '100', time: '22:25:08', status: 'Verified' }
+    ];
+
+    // Load data strictly from active storage (falls back to 5 default surveys)
     function loadCompletesData() {
       try {
         const stored = localStorage.getItem('inexra_live_completes');
-        if (stored !== null) {
+        if (stored && JSON.parse(stored).length > 0) {
           completesData = JSON.parse(stored);
         } else {
-          // Default initial set on first load before admin updates
-          completesData = [
-            { id: 'ZAM-5116-INX', uid: 'RESP-847291-IX', category: 'Consumer Electronics', duration: '8m 42s', reward: '$2.40', cpi: 2.4, points: '240', time: '23:32:10', status: 'Verified' },
-            { id: 'ZAM-4820-INX', uid: 'RESP-639102-IX', category: 'Healthcare & Pharma', duration: '10m 15s', reward: '$3.10', cpi: 3.1, points: '310', time: '23:18:45', status: 'Verified' },
-            { id: 'ZAM-7731-INX', uid: 'RESP-192847-IX', category: 'Finance & Banking', duration: '9m 05s', reward: '$2.75', cpi: 2.75, points: '275', time: '22:56:12', status: 'Verified' },
-            { id: 'ZAM-3392-INX', uid: 'RESP-558291-IX', category: 'Automotive & EV', duration: '7m 50s', reward: '$2.20', cpi: 2.2, points: '220', time: '22:41:30', status: 'Verified' }
-          ];
+          completesData = JSON.parse(JSON.stringify(DEFAULT_COMPLETES));
           localStorage.setItem('inexra_live_completes', JSON.stringify(completesData));
         }
       } catch (e) {
-        completesData = [];
+        completesData = JSON.parse(JSON.stringify(DEFAULT_COMPLETES));
       }
 
       const storedTarget = localStorage.getItem('inexra_target_quota');
       if (storedTarget) {
-        targetQuota = parseInt(storedTarget) || 50;
+        targetQuota = parseInt(storedTarget) || 35;
+      } else {
+        targetQuota = 35;
       }
     }
 
@@ -956,14 +961,43 @@
       lucide.createIcons();
     }
 
-    // Live Cross-Tab Sync with Admin Panel
+    // Live Multi-Channel Auto-Sync with Admin Panel
+    let syncChannel;
+    try {
+      syncChannel = new BroadcastChannel('inexra_sync_channel');
+      syncChannel.onmessage = () => {
+        loadCompletesData();
+        updateCompletesUI();
+      };
+    } catch (err) {}
+
     window.addEventListener('storage', (e) => {
       if (e.key === 'inexra_live_completes' || e.key === 'inexra_target_quota') {
         loadCompletesData();
         updateCompletesUI();
-        log('[REALTIME_SYNC] Live completes data updated from Operations Terminal.', 'success');
       }
     });
+
+    window.addEventListener('focus', () => {
+      loadCompletesData();
+      updateCompletesUI();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        loadCompletesData();
+        updateCompletesUI();
+      }
+    });
+
+    // Auto-poll every 1.2 seconds to guarantee 100% real-time sync across tabs
+    setInterval(() => {
+      const stored = localStorage.getItem('inexra_live_completes');
+      if (stored && stored !== JSON.stringify(completesData)) {
+        loadCompletesData();
+        updateCompletesUI();
+      }
+    }, 1200);
 
     // Boot on load
     window.addEventListener('DOMContentLoaded', () => {

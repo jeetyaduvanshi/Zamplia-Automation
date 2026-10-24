@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INEXRA Operations Terminal | Completes Management</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            zamplia: {
+              blue: '#1a7cc1',
+              dark: '#2d3748',
+              gray: '#4a5568',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      background: #0f172a;
+      font-family: 'Inter', sans-serif;
+      color: #f8fafc;
+    }
+
+    .card-dark {
+      background: #1e293b;
+      border: 1px solid #334155;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+
+    .card-glass {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .pin-input {
+      letter-spacing: 0.6em;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake-anim {
+      animation: shake 0.4s ease;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- ========================================================================= -->
+  <!-- PIN VERIFICATION SCREEN -->
+  <!-- ========================================================================= -->
+  <div id="pin-screen" class="min-h-screen flex items-center justify-center p-4">
+    <div class="card-dark w-full max-w-sm rounded-2xl p-6 sm:p-8 text-center fade-in border border-slate-700 shadow-2xl relative overflow-hidden">
+      <!-- Glow Effect -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Icon -->
+      <div class="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center mx-auto mb-4 text-blue-400">
+        <i data-lucide="shield-lock" class="w-7 h-7"></i>
+      </div>
+
+      <h1 class="text-xl font-extrabold text-white mb-1">INEXRA Operations Terminal</h1>
+      <p class="text-xs text-slate-400 mb-6">Restricted Portal · Staff PIN Required</p>
+
+      <form id="pin-form" onsubmit="handlePinSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-2">
+            Enter 4-Digit Security PIN
+          </label>
+          <input 
+            type="password" 
+            id="pin-code" 
+            maxlength="6" 
+            placeholder="••••" 
+            autofocus
+            class="pin-input w-full py-3 px-4 text-2xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+          />
+        </div>
+
+        <div id="pin-error" class="hidden text-xs text-rose-400 font-medium py-1">
+          Invalid PIN! Please try again.
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
+        >
+          <i data-lucide="key-round" class="w-4 h-4"></i>
+          <span>Unlock Terminal</span>
+        </button>
+      </form>
+
+      <div class="mt-6 pt-5 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+        <span class="flex items-center gap-1.5">
+          <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
+          Default PIN: <strong class="text-slate-300 font-mono">1234</strong>
+        </span>
+        <a href="./" class="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1">
+          <span>Public Gateway</span>
+          <i data-lucide="arrow-right" class="w-3 h-3"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- MAIN ADMIN DASHBOARD (VISIBLE ONLY AFTER CORRECT PIN) -->
+  <!-- ========================================================================= -->
+  <div id="admin-dashboard" class="hidden min-h-screen flex flex-col fade-in">
+
+    <!-- Top Admin Header -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-600/30">
+            IX
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm font-bold text-white">INEXRA Operations Terminal</h2>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Authorized Admin
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400">Manage daily completes &amp; revenue attribution</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="./" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition">
+            <span>View Public Gateway</span>
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          </a>
+          <button onclick="lockAdminTerminal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs font-semibold text-rose-400 transition">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Lock Terminal</span>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 flex-1 space-y-6">
+
+      <!-- KPI Overview Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        
+        <!-- Total Completes -->
+        <div class="card-dark rounded-2xl p-5 border border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-2 font-medium">
+            <span>Total Completes</span>
+            <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div class="text-3xl font-extrabold text-white flex items-baseline gap-2">
+            <span id="kpi-total-completes">0</span>
+            <span class="text-xs text-slate-400 font-normal">records</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">Sirf wahi entries jo yahan add ki gayi hain</p>
+        </div>
+
+        <!-- Total Revenue (Strict sum of CPIs) -->
+        <div class="card-dark rounded-2xl p-5 border border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-2 font-medium">
+            <span>Total Daily Revenue</span>
+            <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div class="text-3xl font-extrabold text-emerald-400" id="kpi-total-revenue">$0.00 USD</div>
+          <p class="text-[11px] text-slate-400 mt-1">Strict sum of all completed CPIs</p>
+        </div>
+
+        <!-- Average CPI -->
+        <div class="card-dark rounded-2xl p-5 border border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-2 font-medium">
+            <span>Average CPI / Study</span>
+            <i data-lucide="calculator" class="w-4 h-4 text-blue-400"></i>
+          </div>
+          <div class="text-3xl font-extrabold text-white" id="kpi-avg-cpi">$0.00</div>
+          <p class="text-[11px] text-slate-400 mt-1">Calculated per complete</p>
+        </div>
+
+        <!-- Quota Progress -->
+        <div class="card-dark rounded-2xl p-5 border border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-2 font-medium">
+            <span>Daily Target Quota</span>
+            <i data-lucide="target" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <input 
+              type="number" 
+              id="input-daily-target" 
+              value="50" 
+              min="1" 
+              max="1000" 
+              onchange="handleTargetQuotaChange(this.value)"
+              class="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-lg font-bold text-white focus:outline-none focus:border-blue-500"
+            />
+            <span class="text-xs text-slate-400 font-medium">Target</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1.5" id="kpi-quota-pct">0% Quota Filled</p>
+        </div>
+
+      </div>
+
+      <!-- Add Complete Form Card -->
+      <div class="card-dark rounded-2xl p-6 border border-slate-800">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white">Add New Survey Complete</h3>
+              <p class="text-xs text-slate-400">Data enter karein — CPI ke hisaab se total revenue automatically badhega</p>
+            </div>
+          </div>
+
+          <button onclick="fillRandomCompleteForm()" type="button" class="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Generate Random Sample</span>
+          </button>
+        </div>
+
+        <form id="add-complete-form" onsubmit="handleAddComplete(event)" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            
+            <!-- Survey ID -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">Survey ID</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  id="admin-survey-id" 
+                  required 
+                  placeholder="ZAM-5116-INX" 
+                  class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <!-- Respondent UID -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">Respondent UID</label>
+              <input 
+                type="text" 
+                id="admin-respondent-uid" 
+                required 
+                placeholder="RESP-847291-IX" 
+                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <!-- CPI / Reward ($ USD) -->
+            <div>
+              <label class="block text-xs font-semibold text-emerald-400 mb-1.5 flex items-center justify-between">
+                <span>CPI / Payout Amount ($ USD)</span>
+                <span class="text-[10px] text-slate-400">Revenue multiplier</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-2 text-xs text-slate-400 font-mono">$</span>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="0.10" 
+                  max="100.00" 
+                  id="admin-cpi" 
+                  required 
+                  value="2.40" 
+                  placeholder="2.40" 
+                  class="w-full pl-7 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-emerald-400 font-bold focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            <!-- Target Category -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">Survey Category</label>
+              <select id="admin-category" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500">
+                <option value="Consumer Electronics">Consumer Electronics</option>
+                <option value="Healthcare & Pharma">Healthcare &amp; Pharma</option>
+                <option value="Finance & Banking">Finance &amp; Banking</option>
+                <option value="Automotive & EV">Automotive &amp; EV</option>
+                <option value="B2B Software & Cloud">B2B Software &amp; Cloud</option>
+                <option value="Retail & FMCG">Retail &amp; FMCG</option>
+                <option value="Food & Beverage">Food &amp; Beverage</option>
+                <option value="Travel & Hospitality">Travel &amp; Hospitality</option>
+                <option value="Telecom & 5G">Telecom &amp; 5G</option>
+              </select>
+            </div>
+
+            <!-- Duration (LOI) -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">Estimated Duration (LOI)</label>
+              <input 
+                type="text" 
+                id="admin-duration" 
+                required 
+                value="8m 42s" 
+                placeholder="8m 42s" 
+                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <!-- Completion Time -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">Completed At (Time)</label>
+              <input 
+                type="text" 
+                id="admin-time" 
+                required 
+                placeholder="23:32:10" 
+                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+          </div>
+
+          <div class="flex items-center justify-end pt-2">
+            <button 
+              type="submit" 
+              class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition flex items-center gap-2"
+            >
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Add Complete to Live Ledger</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Current Completes Table Card -->
+      <div class="card-dark rounded-2xl overflow-hidden border border-slate-800">
+        
+        <!-- Table Header Actions -->
+        <div class="px-6 py-4 bg-slate-900/80 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>Active Completes in Ledger</span>
+              <span id="badge-count" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">0</span>
+            </h3>
+            <p class="text-xs text-slate-400">Yehi records public gateway par dikhayi denge</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="toggleJsonBatchMode()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 transition flex items-center gap-1.5">
+              <i data-lucide="code" class="w-3.5 h-3.5"></i>
+              <span>Batch Edit JSON</span>
+            </button>
+            <button onclick="clearAllCompletes()" class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs font-medium text-rose-400 transition flex items-center gap-1.5">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <span>Clear All</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- JSON Batch Mode Container (Initially Collapsed) -->
+        <div id="json-batch-container" class="hidden p-6 bg-slate-900 border-b border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-300">Raw Completes JSON Dataset:</span>
+            <div class="flex items-center gap-2">
+              <button onclick="copyAdminJson()" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copy
+              </button>
+              <button onclick="loadSampleIntoAdminJson()" class="text-xs text-slate-400 hover:text-slate-300">
+                Load 8 Sample Records
+              </button>
+            </div>
+          </div>
+          <textarea id="admin-json-textarea" class="w-full h-44 p-3 bg-slate-950 border border-slate-700 rounded-xl font-mono text-xs text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+          <div class="flex justify-end gap-2">
+            <button onclick="toggleJsonBatchMode()" class="px-3 py-1.5 text-xs text-slate-400 hover:text-white">Cancel</button>
+            <button onclick="saveAdminJson()" class="px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-lg">Save &amp; Apply</button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900/60 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">#</th>
+                <th class="py-3 px-4">Survey ID</th>
+                <th class="py-3 px-4">Respondent UID</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4">Time</th>
+                <th class="py-3 px-4">Duration</th>
+                <th class="py-3 px-4">CPI / Revenue</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4 text-right">Delete</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body" class="divide-y divide-slate-800/80">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Settings / Change PIN Card -->
+      <div class="card-dark rounded-2xl p-5 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h4 class="text-xs font-bold text-white">Security Settings</h4>
+          <p class="text-[11px] text-slate-400">Terminal access PIN ko change karein</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input 
+            type="password" 
+            id="input-change-pin" 
+            maxlength="6" 
+            placeholder="New PIN" 
+            class="w-28 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+          />
+          <button onclick="handleChangePin()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition">
+            Update PIN
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Admin Footer -->
+    <footer class="border-t border-slate-800 bg-slate-900/50 py-4 text-center text-xs text-slate-500">
+      INEXRA Automated Research Operations Terminal · Session Authenticated
+    </footer>
+
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT LOGIC -->
+  <!-- ========================================================================= -->
+  <script>
+    const DEFAULT_PIN = '1234';
+
+    // State
+    let completesList = [];
+    let targetQuota   = 50;
+
+    // PIN Handlers
+    function getStoredPin() {
+      return localStorage.getItem('inexra_admin_pin') || DEFAULT_PIN;
+    }
+
+    function checkExistingAuth() {
+      if (sessionStorage.getItem('inexra_admin_auth') === 'true') {
+        showDashboard();
+      } else {
+        showPinScreen();
+      }
+    }
+
+    function showPinScreen() {
+      document.getElementById('pin-screen').classList.remove('hidden');
+      document.getElementById('admin-dashboard').classList.add('hidden');
+      document.getElementById('pin-code').value = '';
+      document.getElementById('pin-error').classList.add('hidden');
+      lucide.createIcons();
+    }
+
+    function showDashboard() {
+      document.getElementById('pin-screen').classList.add('hidden');
+      document.getElementById('admin-dashboard').classList.remove('hidden');
+      loadCompletes();
+      renderDashboard();
+      initFormDefaults();
+      lucide.createIcons();
+    }
+
+    function handlePinSubmit(e) {
+      e.preventDefault();
+      const entered = document.getElementById('pin-code').value.trim();
+      const currentPin = getStoredPin();
+
+      if (entered === currentPin) {
+        sessionStorage.setItem('inexra_admin_auth', 'true');
+        showDashboard();
+      } else {
+        const errEl = document.getElementById('pin-error');
+        errEl.classList.remove('hidden');
+        const box = document.getElementById('pin-code');
+        box.classList.add('shake-anim');
+        setTimeout(() => box.classList.remove('shake-anim'), 400);
+      }
+    }
+
+    function lockAdminTerminal() {
+      sessionStorage.removeItem('inexra_admin_auth');
+      showPinScreen();
+    }
+
+    function handleChangePin() {
+      const newPin = document.getElementById('input-change-pin').value.trim();
+      if (!newPin || newPin.length < 4) {
+        alert('PIN kam se kam 4 characters ka hona chahiye!');
+        return;
+      }
+      localStorage.setItem('inexra_admin_pin', newPin);
+      document.getElementById('input-change-pin').value = '';
+      alert(`PIN successfully change ho gaya! Naya PIN: ${newPin}`);
+    }
+
+    // Data Load & Save
+    function loadCompletes() {
+      try {
+        const stored = localStorage.getItem('inexra_live_completes');
+        if (stored) {
+          completesList = JSON.parse(stored);
+        } else {
+          completesList = [];
+        }
+      } catch (err) {
+        completesList = [];
+      }
+
+      const storedTarget = localStorage.getItem('inexra_target_quota');
+      if (storedTarget) {
+        targetQuota = parseInt(storedTarget) || 50;
+      }
+      const targetInput = document.getElementById('input-daily-target');
+      if (targetInput) targetInput.value = targetQuota;
+    }
+
+    function saveCompletes() {
+      localStorage.setItem('inexra_live_completes', JSON.stringify(completesList));
+      localStorage.setItem('inexra_target_quota', String(targetQuota));
+      renderDashboard();
+    }
+
+    function handleTargetQuotaChange(val) {
+      targetQuota = parseInt(val) || 50;
+      saveCompletes();
+    }
+
+    // Form Initialization
+    function initFormDefaults() {
+      const now = new Date();
+      const t = now.toTimeString().split(' ')[0];
+      const rNum = Math.floor(1000 + Math.random() * 9000);
+      const rUid = Math.floor(100000 + Math.random() * 900000);
+
+      document.getElementById('admin-survey-id').value = 'ZAM-' + rNum + '-INX';
+      document.getElementById('admin-respondent-uid').value = 'RESP-' + rUid + '-IX';
+      document.getElementById('admin-time').value = t;
+    }
+
+    function fillRandomCompleteForm() {
+      initFormDefaults();
+      const cpiOptions = ['2.40', '2.80', '3.10', '1.90', '4.50', '2.25'];
+      const durOptions = ['7m 30s', '8m 42s', '9m 15s', '10m 00s', '6m 50s'];
+      const catOptions = ['Consumer Electronics', 'Healthcare & Pharma', 'Finance & Banking', 'Automotive & EV', 'B2B Software & Cloud'];
+      
+      document.getElementById('admin-cpi').value = cpiOptions[Math.floor(Math.random() * cpiOptions.length)];
+      document.getElementById('admin-duration').value = durOptions[Math.floor(Math.random() * durOptions.length)];
+      document.getElementById('admin-category').value = catOptions[Math.floor(Math.random() * catOptions.length)];
+    }
+
+    // Add Complete Action
+    function handleAddComplete(e) {
+      e.preventDefault();
+
+      const id       = document.getElementById('admin-survey-id').value.trim();
+      const uid      = document.getElementById('admin-respondent-uid').value.trim();
+      const rawCpi   = parseFloat(document.getElementById('admin-cpi').value) || 2.40;
+      const category = document.getElementById('admin-category').value;
+      const duration = document.getElementById('admin-duration').value.trim();
+      const time     = document.getElementById('admin-time').value.trim();
+
+      const cpiFormatted = '$' + rawCpi.toFixed(2);
+      const points = String(Math.round(rawCpi * 100));
+
+      const newEntry = {
+        id,
+        uid,
+        category,
+        duration,
+        reward: cpiFormatted,
+        cpi: rawCpi,
+        points,
+        time,
+        status: 'Verified'
+      };
+
+      // Prepend to list
+      completesList.unshift(newEntry);
+      saveCompletes();
+
+      // Reset Form with fresh random values for next entry
+      initFormDefaults();
+      alert(`Complete ${id} added successfully! (+$${rawCpi.toFixed(2)})`);
+    }
+
+    function deleteComplete(index) {
+      const item = completesList[index];
+      if (confirm(`Record ${item.id} delete karein?`)) {
+        completesList.splice(index, 1);
+        saveCompletes();
+      }
+    }
+
+    function clearAllCompletes() {
+      if (confirm('Kya aap sach me saare completes clear karna chahte hain?')) {
+        completesList = [];
+        saveCompletes();
+      }
+    }
+
+    // Render Dashboard
+    function renderDashboard() {
+      const totalCount = completesList.length;
+      
+      // Calculate strict revenue from CPI
+      let totalRevenue = 0;
+      completesList.forEach(item => {
+        const val = typeof item.cpi === 'number' 
+          ? item.cpi 
+          : (parseFloat((item.reward || '$0').replace(/[^0-9.]/g, '')) || 0);
+        totalRevenue += val;
+      });
+
+      const avgCpi = totalCount > 0 ? (totalRevenue / totalCount) : 0;
+      const quotaPct = Math.min(100, Math.round((totalCount / targetQuota) * 100));
+
+      // Update KPI Cards
+      document.getElementById('kpi-total-completes').innerText = totalCount;
+      document.getElementById('kpi-total-revenue').innerText = '$' + totalRevenue.toFixed(2) + ' USD';
+      document.getElementById('kpi-avg-cpi').innerText = '$' + avgCpi.toFixed(2);
+      document.getElementById('kpi-quota-pct').innerText = `${quotaPct}% of ${targetQuota} Target Filled`;
+      document.getElementById('badge-count').innerText = totalCount;
+
+      // Render Table Rows
+      const tbody = document.getElementById('admin-table-body');
+      tbody.innerHTML = '';
+
+      if (totalCount === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="py-8 text-center text-slate-500">
+              <i data-lucide="clipboard-x" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+              Filhal koi complete add nahi kiya gaya hai. Upar se complete add karein.
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      completesList.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40 transition';
+        const displayCpi = row.reward || ('$' + (row.cpi ? row.cpi.toFixed(2) : '2.40'));
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono text-slate-500 text-[11px]">${totalCount - idx}</td>
+          <td class="py-3 px-4 font-mono font-bold text-blue-400">${row.id}</td>
+          <td class="py-3 px-4 font-mono text-slate-300">${row.uid}</td>
+          <td class="py-3 px-4 text-slate-200">${row.category}</td>
+          <td class="py-3 px-4 font-mono text-slate-400">${row.time}</td>
+          <td class="py-3 px-4 text-slate-300">${row.duration}</td>
+          <td class="py-3 px-4 font-bold text-emerald-400">${displayCpi}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              ${row.status || 'Verified'}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="deleteComplete(${idx})" class="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition" title="Delete">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+    }
+
+    // Batch JSON Mode
+    function toggleJsonBatchMode() {
+      const box = document.getElementById('json-batch-container');
+      if (box.classList.contains('hidden')) {
+        document.getElementById('admin-json-textarea').value = JSON.stringify(completesList, null, 2);
+        box.classList.remove('hidden');
+      } else {
+        box.classList.add('hidden');
+      }
+    }
+
+    function saveAdminJson() {
+      try {
+        const parsed = JSON.parse(document.getElementById('admin-json-textarea').value);
+        if (!Array.isArray(parsed)) {
+          alert('Error: Data must be a JSON array [ { ... } ]');
+          return;
+        }
+        completesList = parsed;
+        saveCompletes();
+        toggleJsonBatchMode();
+        alert('Batch JSON saved successfully!');
+      } catch (e) {
+        alert('Invalid JSON! Check syntax: ' + e.message);
+      }
+    }
+
+    function copyAdminJson() {
+      navigator.clipboard.writeText(document.getElementById('admin-json-textarea').value).then(() => {
+        alert('JSON copied to clipboard!');
+      });
+    }
+
+    function loadSampleIntoAdminJson() {
+      const sample = [
+        { id: 'ZAM-5116-INX', uid: 'RESP-847291-IX', category: 'Consumer Electronics', duration: '8m 42s', reward: '$2.40', cpi: 2.4, points: '240', time: '23:32:10', status: 'Verified' },
+        { id: 'ZAM-4820-INX', uid: 'RESP-639102-IX', category: 'Healthcare & Pharma', duration: '10m 15s', reward: '$3.10', cpi: 3.1, points: '310', time: '23:18:45', status: 'Verified' },
+        { id: 'ZAM-7731-INX', uid: 'RESP-192847-IX', category: 'Finance & Banking', duration: '9m 05s', reward: '$2.75', cpi: 2.75, points: '275', time: '22:56:12', status: 'Verified' },
+        { id: 'ZAM-3392-INX', uid: 'RESP-558291-IX', category: 'Automotive & EV', duration: '7m 50s', reward: '$2.20', cpi: 2.2, points: '220', time: '22:41:30', status: 'Verified' },
+        { id: 'ZAM-8910-INX', uid: 'RESP-339182-IX', category: 'B2B Software & Cloud', duration: '12m 10s', reward: '$4.50', cpi: 4.5, points: '450', time: '22:25:08', status: 'Verified' },
+        { id: 'ZAM-2401-INX', uid: 'RESP-772910-IX', category: 'Retail & FMCG', duration: '6m 30s', reward: '$1.80', cpi: 1.8, points: '180', time: '22:08:40', status: 'Verified' },
+        { id: 'ZAM-6194-INX', uid: 'RESP-482019-IX', category: 'Food & Beverage', duration: '8m 10s', reward: '$2.40', cpi: 2.4, points: '240', time: '21:52:19', status: 'Verified' },
+        { id: 'ZAM-1048-INX', uid: 'RESP-993821-IX', category: 'Consumer Electronics', duration: '9m 40s', reward: '$2.50', cpi: 2.5, points: '250', time: '21:30:05', status: 'Verified' }
+      ];
+      document.getElementById('admin-json-textarea').value = JSON.stringify(sample, null, 2);
+    }
+
+    // Auto-sync across browser tabs
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'inexra_live_completes' || e.key === 'inexra_target_quota') {
+        loadCompletes();
+        renderDashboard();
+      }
+    });
+
+    // Boot
+    window.addEventListener('DOMContentLoaded', () => {
+      checkExistingAuth();
+    });
+  </script>
+
+</body>
+</html>

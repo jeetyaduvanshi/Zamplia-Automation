@@ -35,6 +35,11 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Firebase Cloud SDK & Config -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="./firebase-config.js"></script>
+
   <style>
     body {
       background: #f8fafc;
@@ -223,6 +228,11 @@
           <span>Latency: <strong class="text-slate-700" id="latency-val">24ms</strong></span>
         </div>
 
+        <button id="header-auto-btn" onclick="toggleAutomation()" class="flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition">
+          <i data-lucide="play" class="w-3.5 h-3.5 fill-current" id="header-auto-icon"></i>
+          <span id="header-auto-label">Start Automation</span>
+        </button>
+
         <button onclick="restartFetchProcess()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
           <span class="hidden sm:inline">Re-Sync</span>
@@ -376,7 +386,7 @@
         </div>
 
         <!-- Metadata Table -->
-        <div class="rounded-xl border border-slate-200 overflow-hidden mb-5 text-sm">
+        <div class="rounded-xl border border-slate-200 overflow-hidden text-sm">
           <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
             <span class="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">Session Details</span>
             <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
@@ -417,17 +427,67 @@
           </div>
         </div>
 
-        <!-- CTA Buttons -->
-        <div class="flex flex-col sm:flex-row gap-3">
-          <button onclick="startSurveyFlow()" class="btn-primary flex-1 py-3.5 px-6 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2">
-            Proceed to Survey Partner
-            <i data-lucide="arrow-right" class="w-4 h-4"></i>
-          </button>
+        <!-- AUTOMATION SIMULATION ENGINE CARD -->
+        <div class="mt-5 p-4 sm:p-5 rounded-2xl border border-blue-200/90 bg-gradient-to-br from-blue-50/70 via-indigo-50/30 to-white card-shadow">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-3.5">
+              <div id="auto-pulse-icon" class="w-12 h-12 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-600 flex items-center justify-center flex-shrink-0 transition-all">
+                <i data-lucide="cpu" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="text-sm font-bold text-slate-800">INEXRA Auto-Completion Bot</h4>
+                  <span id="auto-status-badge" class="badge badge-amber text-[10.5px]">Idle</span>
+                </div>
+                <p id="auto-status-text" class="text-xs text-slate-500 mt-0.5">
+                  Simulate high-velocity S2S survey auto-routing, question answering &amp; completes sync
+                </p>
+              </div>
+            </div>
 
-          <button onclick="simulateCallback('complete')" class="btn-secondary py-3.5 px-5 rounded-xl text-slate-600 font-medium text-xs flex items-center justify-center gap-2">
-            <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
-            Simulate Callback (Complete)
-          </button>
+            <!-- Controls: Speed selector & Toggle Button -->
+            <div class="flex items-center gap-2.5">
+              <!-- Cadence selector -->
+              <div class="flex items-center bg-white border border-slate-200 rounded-xl p-0.5 text-xs">
+                <button type="button" id="speed-btn-normal" onclick="setAutomationSpeed(3500)" class="px-2.5 py-1.5 rounded-lg font-semibold bg-blue-50 text-blue-700 transition">3.5s</button>
+                <button type="button" id="speed-btn-fast" onclick="setAutomationSpeed(2000)" class="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 transition">2s (Fast)</button>
+              </div>
+
+              <!-- Main Start / Stop Button -->
+              <button id="main-auto-btn" onclick="toggleAutomation()" class="btn-primary py-2.5 px-5 rounded-xl text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all">
+                <i data-lucide="play" class="w-4 h-4 fill-white" id="main-auto-icon"></i>
+                <span id="main-auto-label">Start Automation</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Live Cycle Mini Progress Bar (Visible during automation) -->
+          <div id="auto-cycle-container" class="mt-4 pt-3.5 border-t border-blue-100/80 hidden">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-600 mb-2">
+              <span id="auto-cycle-step" class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>Connecting to survey worker pool...</span>
+              </span>
+              <span class="text-xs font-semibold text-slate-700 font-mono">
+                Session Generated: <strong class="text-emerald-600" id="auto-session-count">0 completes ($0.00)</strong>
+              </span>
+            </div>
+
+            <!-- Mini Progress Bar -->
+            <div class="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden border border-slate-200/60">
+              <div id="auto-cycle-bar" class="h-2 rounded-full transition-all duration-300" style="width: 0%; background: linear-gradient(90deg, #1a7cc1 0%, #22c55e 100%);"></div>
+            </div>
+
+            <!-- Live telemetry line -->
+            <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-500 mt-2 font-mono">
+              <span id="auto-current-survey">Survey: <strong class="text-blue-600">--</strong></span>
+              <span id="auto-current-cat">Category: <strong class="text-slate-700">--</strong></span>
+              <span id="auto-current-cpi">Allocated CPI: <strong class="text-emerald-600">--</strong></span>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -478,7 +538,7 @@
           <div>
             <div class="flex flex-wrap items-center gap-2">
               <h2 class="text-base font-bold text-slate-800">INEXRA Panel — Daily Completes Ledger</h2>
-              <span class="badge badge-green text-[10.5px]">Live Sync Active</span>
+              <span id="cloud-sync-badge" class="badge badge-amber text-[10.5px]">Local Storage Mode</span>
             </div>
             <p class="text-xs text-slate-500 mt-0.5">Real-time breakdown of completed surveys, respondent payouts &amp; daily quota performance</p>
           </div>
@@ -681,6 +741,77 @@
         targetQuota = parseInt(storedTarget) || 35;
       } else {
         targetQuota = 35;
+      }
+
+      // Initialize Cloud Firestore Real-time Sync if configured
+      initFirebaseSync();
+    }
+
+    let isFirebaseListenerActive = false;
+
+    function initFirebaseSync() {
+      const syncBadge = document.getElementById('cloud-sync-badge');
+      if (typeof isFirebaseConfigured !== 'undefined' && isFirebaseConfigured && db) {
+        if (syncBadge) {
+          syncBadge.className = 'badge badge-green text-[10.5px]';
+          syncBadge.innerHTML = `<i data-lucide="cloud" class="w-3 h-3 text-emerald-500"></i> Cloud Sync Active (Firebase)`;
+          lucide.createIcons();
+        }
+
+        if (isFirebaseListenerActive) return;
+        isFirebaseListenerActive = true;
+
+        log('[CLOUD] Connected to Google Cloud Firestore real-time pipeline.', 'cyan');
+
+        // Real-time listener for completes
+        db.collection('completes').orderBy('createdAt', 'desc').limit(200).onSnapshot((snapshot) => {
+          if (!snapshot.empty) {
+            const cloudList = [];
+            snapshot.forEach((doc) => {
+              const data = doc.data();
+              cloudList.push({
+                _docId: doc.id,
+                id: data.id || ('ZAM-' + doc.id.slice(0, 4) + '-INX'),
+                uid: data.uid || ('RESP-' + doc.id.slice(4, 10) + '-IX'),
+                category: data.category || 'Consumer Electronics',
+                duration: data.duration || '7m 45s',
+                reward: data.reward || ('$' + (data.cpi ? data.cpi.toFixed(2) : '0.85')),
+                cpi: typeof data.cpi === 'number' ? data.cpi : (parseFloat((data.reward || '$0').replace(/[^0-9.]/g, '')) || 0.85),
+                points: data.points || String(Math.round((data.cpi || 0.85) * 100)),
+                time: data.time || new Date().toTimeString().split(' ')[0],
+                status: data.status || 'Verified'
+              });
+            });
+
+            completesData = cloudList;
+            try {
+              localStorage.setItem('inexra_live_completes', JSON.stringify(completesData));
+            } catch(e) {}
+            updateCompletesUI();
+            log(`[CLOUD_SYNC] Received ${cloudList.length} verified completes from Firestore.`, 'success');
+          }
+        }, (err) => {
+          console.warn('[FIREBASE] Firestore listener error:', err);
+          log(`[FIREBASE_ERR] ${err.message}`, 'warn');
+        });
+
+        // Real-time listener for quota settings
+        db.collection('settings').doc('quota').onSnapshot((doc) => {
+          if (doc.exists && doc.data().targetQuota) {
+            targetQuota = parseInt(doc.data().targetQuota) || 35;
+            try {
+              localStorage.setItem('inexra_target_quota', String(targetQuota));
+            } catch(e) {}
+            updateCompletesUI();
+          }
+        });
+      } else {
+        if (syncBadge) {
+          syncBadge.className = 'badge badge-amber text-[10.5px] cursor-pointer';
+          syncBadge.title = 'Add credentials in firebase-config.js to enable global multi-device sync';
+          syncBadge.innerHTML = `<i data-lucide="database" class="w-3 h-3 text-amber-500"></i> Local Storage Mode (Ready for Cloud)`;
+          lucide.createIcons();
+        }
       }
     }
 
@@ -959,6 +1090,286 @@
       log(m.extra, 'muted');
 
       lucide.createIcons();
+    }
+
+    // =========================================================================
+    // AUTOMATION SIMULATION ENGINE (START / STOP)
+    // =========================================================================
+    let isAutomationRunning   = false;
+    let automationTimeoutId   = null;
+    let automationSpeed       = 3500;
+    let sessionCompletesCount = 0;
+    let sessionRevenueTotal   = 0;
+
+    const AUTO_CATEGORIES = [
+      'Consumer Electronics',
+      'Retail & Shopping',
+      'Food & Beverage',
+      'Media & Entertainment',
+      'Lifestyle & Fitness',
+      'Healthcare & Wellness',
+      'Finance & Banking',
+      'Automotive & Travel'
+    ];
+
+    const AUTO_DURATIONS = ['6m 15s', '6m 45s', '7m 10s', '7m 35s', '8m 20s', '8m 50s', '9m 15s'];
+    const AUTO_CPI_OPTIONS = [0.75, 0.80, 0.85, 0.90, 0.95, 1.00, 1.10, 1.25];
+
+    function setAutomationSpeed(ms) {
+      automationSpeed = ms;
+      const btnNorm = document.getElementById('speed-btn-normal');
+      const btnFast = document.getElementById('speed-btn-fast');
+      if (btnNorm && btnFast) {
+        if (ms <= 2500) {
+          btnFast.className = 'px-2.5 py-1.5 rounded-lg font-semibold bg-blue-50 text-blue-700 transition';
+          btnNorm.className = 'px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 transition';
+        } else {
+          btnNorm.className = 'px-2.5 py-1.5 rounded-lg font-semibold bg-blue-50 text-blue-700 transition';
+          btnFast.className = 'px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 transition';
+        }
+      }
+      log(`[CONFIG] Automation cycle cadence set to ${(ms / 1000).toFixed(1)}s / survey.`, 'muted');
+    }
+
+    function toggleAutomation() {
+      if (isAutomationRunning) {
+        stopAutomation();
+      } else {
+        startAutomation();
+      }
+    }
+
+    function updateAutomationUI(running) {
+      const mainBtn = document.getElementById('main-auto-btn');
+      const headerBtn = document.getElementById('header-auto-btn');
+      const badge = document.getElementById('auto-status-badge');
+      const desc = document.getElementById('auto-status-text');
+      const pulseIcon = document.getElementById('auto-pulse-icon');
+      const cycleContainer = document.getElementById('auto-cycle-container');
+
+      if (running) {
+        if (mainBtn) {
+          mainBtn.className = 'bg-rose-600 hover:bg-rose-700 py-2.5 px-5 rounded-xl text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 transition-all';
+          mainBtn.innerHTML = `<i data-lucide="square" class="w-4 h-4 fill-white"></i> <span>Stop Automation</span>`;
+        }
+        if (headerBtn) {
+          headerBtn.className = 'flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition';
+          headerBtn.innerHTML = `<i data-lucide="square" class="w-3.5 h-3.5 fill-white"></i> <span>Stop Automation</span>`;
+        }
+        if (badge) {
+          badge.className = 'badge badge-green text-[10.5px]';
+          badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Running`;
+        }
+        if (desc) {
+          desc.innerHTML = `<span class="text-emerald-700 font-medium">Actively solving surveys &amp; synchronizing S2S completes...</span>`;
+        }
+        if (pulseIcon) {
+          pulseIcon.className = 'w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 flex items-center justify-center flex-shrink-0 animate-pulse transition-all';
+        }
+        if (cycleContainer) {
+          cycleContainer.classList.remove('hidden');
+        }
+      } else {
+        if (mainBtn) {
+          mainBtn.className = 'btn-primary py-2.5 px-5 rounded-xl text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all';
+          mainBtn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-white"></i> <span>Start Automation</span>`;
+        }
+        if (headerBtn) {
+          headerBtn.className = 'flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition';
+          headerBtn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i> <span>Start Automation</span>`;
+        }
+        if (badge) {
+          badge.className = 'badge badge-amber text-[10.5px]';
+          badge.innerHTML = 'Idle';
+        }
+        if (desc) {
+          desc.innerText = 'Simulate high-velocity S2S survey auto-routing, question answering & completes sync';
+        }
+        if (pulseIcon) {
+          pulseIcon.className = 'w-12 h-12 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-600 flex items-center justify-center flex-shrink-0 transition-all';
+        }
+      }
+      lucide.createIcons();
+    }
+
+    function startAutomation() {
+      if (isAutomationRunning) return;
+      isAutomationRunning = true;
+
+      // Ensure ready state is displayed if currently in loading or callback state
+      if ($loading && !$loading.classList.contains('hidden')) {
+        $loading.classList.add('hidden');
+      }
+      if ($ready && $ready.classList.contains('hidden')) {
+        $ready.classList.remove('hidden');
+      }
+      if ($callback && !$callback.classList.contains('hidden')) {
+        $callback.classList.add('hidden');
+      }
+
+      updateAutomationUI(true);
+      log('──────────────────────────────────────────────────', 'muted');
+      log('[AUTOMATION] Worker engine STARTED by operator.', 'success');
+      log('[ENGINE] INEXRA S2S high-velocity automated pipeline active.', 'cyan');
+
+      runNextSurveyCycle();
+    }
+
+    function stopAutomation() {
+      isAutomationRunning = false;
+      if (automationTimeoutId) {
+        clearTimeout(automationTimeoutId);
+        automationTimeoutId = null;
+      }
+      updateAutomationUI(false);
+      log('[AUTOMATION] Worker engine PAUSED by operator.', 'warn');
+
+      const bar = document.getElementById('auto-cycle-bar');
+      const step = document.getElementById('auto-cycle-step');
+      if (bar) bar.style.width = '0%';
+      if (step) {
+        step.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> <span>Engine paused · Press Start to resume</span>`;
+      }
+    }
+
+    function runNextSurveyCycle() {
+      if (!isAutomationRunning) return;
+
+      const duration = automationSpeed;
+      const sNum = Math.floor(1000 + Math.random() * 9000);
+      const uNum = Math.floor(100000 + Math.random() * 900000);
+      const curSurveyId = 'ZAM-' + sNum + '-INX';
+      const curUid = 'RESP-' + uNum + '-IX';
+      const category = AUTO_CATEGORIES[Math.floor(Math.random() * AUTO_CATEGORIES.length)];
+      const cpiVal = AUTO_CPI_OPTIONS[Math.floor(Math.random() * AUTO_CPI_OPTIONS.length)];
+      const surveyDur = AUTO_DURATIONS[Math.floor(Math.random() * AUTO_DURATIONS.length)];
+
+      const barEl = document.getElementById('auto-cycle-bar');
+      const stepEl = document.getElementById('auto-cycle-step');
+      const sIdEl = document.getElementById('auto-current-survey');
+      const catEl = document.getElementById('auto-current-cat');
+      const cpiEl = document.getElementById('auto-current-cpi');
+      const cardCatEl = document.getElementById('session-category-val');
+
+      // Update card labels
+      if ($surveyId) $surveyId.innerText = curSurveyId;
+      if ($respondentId) $respondentId.innerText = curUid;
+      if (cardCatEl) cardCatEl.innerText = category;
+
+      if (sIdEl) sIdEl.innerHTML = `Survey: <strong class="text-blue-600">${curSurveyId}</strong>`;
+      if (catEl) catEl.innerHTML = `Category: <strong class="text-slate-700">${category}</strong>`;
+      if (cpiEl) cpiEl.innerHTML = `Allocated CPI: <strong class="text-emerald-600">$${cpiVal.toFixed(2)}</strong>`;
+
+      // Phase 1: Allocation
+      if (barEl) barEl.style.width = '20%';
+      if (stepEl) {
+        stepEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span> <span>Matching quota &amp; profiling ${curSurveyId}...</span>`;
+      }
+      log(`[ALLOCATE] Matched active inventory #${curSurveyId} (Cat: ${category})`, 'cyan');
+
+      // Phase 2: Answering
+      automationTimeoutId = setTimeout(() => {
+        if (!isAutomationRunning) return;
+        if (barEl) barEl.style.width = '60%';
+        if (stepEl) {
+          stepEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> <span>Auto-answering questions with randomized cadence...</span>`;
+        }
+        log(`[AUTO_BOT] Demographic filter passed · Auto-filling questions (${surveyDur})...`, 'muted');
+
+        // Phase 3: Postback
+        automationTimeoutId = setTimeout(() => {
+          if (!isAutomationRunning) return;
+          if (barEl) barEl.style.width = '88%';
+          if (stepEl) {
+            stepEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> <span>Dispatching Zamplia S2S postback webhook...</span>`;
+          }
+          log(`[WEBHOOK] Submitting completion payload to Zamplia endpoint...`, 'indigo');
+
+          // Phase 4: Complete registered
+          automationTimeoutId = setTimeout(() => {
+            if (!isAutomationRunning) return;
+            if (barEl) barEl.style.width = '100%';
+
+            const timeStr = new Date().toTimeString().split(' ')[0];
+            const rewardStr = '$' + cpiVal.toFixed(2);
+            const pointsStr = String(Math.round(cpiVal * 100));
+
+            const newEntry = {
+              id: curSurveyId,
+              uid: curUid,
+              category: category,
+              duration: surveyDur,
+              reward: rewardStr,
+              cpi: cpiVal,
+              points: pointsStr,
+              time: timeStr,
+              status: 'Verified',
+              _isNew: true
+            };
+
+            // Prepend new complete
+            completesData.unshift(newEntry);
+            if (completesData.length > 200) {
+              completesData = completesData.slice(0, 200);
+            }
+
+            // Sync storage and multi-tab channel
+            try {
+              localStorage.setItem('inexra_live_completes', JSON.stringify(completesData));
+              if (syncChannel) syncChannel.postMessage({ type: 'UPDATE' });
+            } catch(e) {}
+
+            // Save to Firebase Cloud Firestore if configured
+            if (typeof isFirebaseConfigured !== 'undefined' && isFirebaseConfigured && db) {
+              try {
+                db.collection('completes').add({
+                  id: curSurveyId,
+                  uid: curUid,
+                  category: category,
+                  duration: surveyDur,
+                  reward: rewardStr,
+                  cpi: cpiVal,
+                  points: pointsStr,
+                  time: timeStr,
+                  status: 'Verified',
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                log(`[CLOUD_PUSH] Complete recorded in Google Cloud Firestore.`, 'cyan');
+              } catch (fErr) {
+                console.warn('[FIREBASE] Push error:', fErr);
+              }
+            }
+
+            sessionCompletesCount++;
+            sessionRevenueTotal += cpiVal;
+
+            const sessionCountEl = document.getElementById('auto-session-count');
+            if (sessionCountEl) {
+              sessionCountEl.innerText = `${sessionCompletesCount} completes (+$${sessionRevenueTotal.toFixed(2)})`;
+            }
+
+            if (stepEl) {
+              stepEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span class="text-emerald-700 font-bold">Complete Registered! +${rewardStr}</span>`;
+            }
+
+            log(`[POSTBACK 200 OK] Survey #${curSurveyId} complete registered! (+${rewardStr})`, 'success');
+
+            // Update UI across page
+            updateCompletesUI();
+
+            // Phase 5: Next cycle
+            automationTimeoutId = setTimeout(() => {
+              if (isAutomationRunning) {
+                if (barEl) barEl.style.width = '0%';
+                runNextSurveyCycle();
+              }
+            }, Math.max(300, Math.floor(duration * 0.15)));
+
+          }, Math.floor(duration * 0.25));
+
+        }, Math.floor(duration * 0.35));
+
+      }, Math.floor(duration * 0.28));
     }
 
     // Live Multi-Channel Auto-Sync with Admin Panel

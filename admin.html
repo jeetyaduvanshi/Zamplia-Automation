@@ -28,6 +28,11 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Firebase Cloud SDK & Config -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="./firebase-config.js"></script>
+
   <style>
     body {
       background: #0f172a;
@@ -137,6 +142,10 @@
         </div>
 
         <div class="flex items-center gap-3">
+          <span id="admin-cloud-badge" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400">
+            <i data-lucide="database" class="w-3.5 h-3.5"></i>
+            <span>Local Mode</span>
+          </span>
           <a href="./" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition">
             <span>View Public Page</span>
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
@@ -200,10 +209,16 @@
             <span>Add Complete</span>
           </h3>
 
-          <button onclick="fillRandomCompleteForm()" type="button" class="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-            <span>Generate Sample</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <button id="admin-auto-btn" onclick="toggleAdminAutomation()" type="button" class="text-xs font-bold flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+              <span id="admin-auto-label">Start Automation</span>
+            </button>
+            <button onclick="fillRandomCompleteForm()" type="button" class="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              <span>Generate Sample</span>
+            </button>
+          </div>
         </div>
 
         <form id="add-complete-form" onsubmit="handleAddComplete(event)" class="space-y-4">
@@ -482,6 +497,72 @@
       }
       const targetInput = document.getElementById('input-daily-target');
       if (targetInput) targetInput.value = targetQuota;
+
+      initAdminFirebaseSync();
+    }
+
+    let isFirebaseAdminActive = false;
+
+    function initAdminFirebaseSync() {
+      const badge = document.getElementById('admin-cloud-badge');
+      if (typeof isFirebaseConfigured !== 'undefined' && isFirebaseConfigured && db) {
+        if (badge) {
+          badge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-400';
+          badge.innerHTML = `<i data-lucide="cloud" class="w-3.5 h-3.5"></i> <span>Cloud Live (Firebase)</span>`;
+          lucide.createIcons();
+        }
+
+        if (isFirebaseAdminActive) return;
+        isFirebaseAdminActive = true;
+
+        // Subscribe to completes in Firestore
+        db.collection('completes').orderBy('createdAt', 'desc').limit(200).onSnapshot((snapshot) => {
+          if (!snapshot.empty) {
+            const list = [];
+            snapshot.forEach((doc) => {
+              const d = doc.data();
+              list.push({
+                _docId: doc.id,
+                id: d.id || ('ZAM-' + doc.id.slice(0, 4) + '-INX'),
+                uid: d.uid || ('RESP-' + doc.id.slice(4, 10) + '-IX'),
+                category: d.category || 'Consumer Electronics',
+                duration: d.duration || '7m 45s',
+                reward: d.reward || ('$' + (d.cpi ? d.cpi.toFixed(2) : '0.85')),
+                cpi: typeof d.cpi === 'number' ? d.cpi : (parseFloat((d.reward || '$0').replace(/[^0-9.]/g, '')) || 0.85),
+                points: d.points || String(Math.round((d.cpi || 0.85) * 100)),
+                time: d.time || new Date().toTimeString().split(' ')[0],
+                status: d.status || 'Verified'
+              });
+            });
+            completesList = list;
+            try {
+              localStorage.setItem('inexra_live_completes', JSON.stringify(completesList));
+            } catch(e) {}
+            renderDashboard();
+          }
+        }, console.warn);
+
+        // Subscribe to quota
+        db.collection('settings').doc('quota').onSnapshot((doc) => {
+          if (doc.exists && doc.data().targetQuota) {
+            targetQuota = parseInt(doc.data().targetQuota) || 35;
+            const targetInput = document.getElementById('input-daily-target');
+            if (targetInput) targetInput.value = targetQuota;
+            try {
+              localStorage.setItem('inexra_target_quota', String(targetQuota));
+            } catch(e) {}
+            renderDashboard();
+          }
+        }, console.warn);
+
+      } else {
+        if (badge) {
+          badge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400';
+          badge.title = 'Configure firebase-config.js for global multi-device sync';
+          badge.innerHTML = `<i data-lucide="database" class="w-3.5 h-3.5"></i> <span>Local Mode</span>`;
+          lucide.createIcons();
+        }
+      }
     }
 
     function saveCompletes() {
@@ -496,6 +577,9 @@
     function handleTargetQuotaChange(val) {
       targetQuota = parseInt(val) || 35;
       saveCompletes();
+      if (typeof isFirebaseConfigured !== 'undefined' && isFirebaseConfigured && db) {
+        db.collection('settings').doc('quota').set({ targetQuota: targetQuota }, { merge: true }).catch(console.error);
+      }
     }
 
     function initFormDefaults() {
@@ -548,15 +632,43 @@
       completesList.unshift(newEntry);
       saveCompletes();
       initFormDefaults();
+
+      if (typeof isFirebaseConfigured !== 'undefined' && isFirebaseConfigured && db) {
+        db.collection('completes').add({
+          id,
+          uid,
+          category,
+          duration,
+          reward: cpiFormatted,
+          cpi: rawCpi,
+          points,
+          time,
+          status: 'Verified',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then((docRef) => {
+          newEntry._docId = docRef.id;
+        }).catch(console.error);
+      }
     }
 
     function deleteComplete(index) {
+      const itemToDelete = completesList[index];
+      if (typeof isFirebaseConfigured !== 'undefined' && isFirebaseConfigured && db && itemToDelete && itemToDelete._docId) {
+        db.collection('completes').doc(itemToDelete._docId).delete().catch(console.error);
+      }
       completesList.splice(index, 1);
       saveCompletes();
     }
 
     function clearAllCompletes() {
       if (confirm('Clear all completes?')) {
+        if (typeof isFirebaseConfigured !== 'undefined' && isFirebaseConfigured && db) {
+          completesList.forEach(item => {
+            if (item._docId) {
+              db.collection('completes').doc(item._docId).delete().catch(console.error);
+            }
+          });
+        }
         completesList = [];
         saveCompletes();
       }
@@ -623,6 +735,98 @@
       });
 
       lucide.createIcons();
+    }
+
+    // =========================================================================
+    // ADMIN AUTOMATION SIMULATION ENGINE
+    // =========================================================================
+    let adminAutoRunning = false;
+    let adminAutoTimer   = null;
+
+    function toggleAdminAutomation() {
+      if (adminAutoRunning) {
+        stopAdminAutomation();
+      } else {
+        startAdminAutomation();
+      }
+    }
+
+    function startAdminAutomation() {
+      adminAutoRunning = true;
+      const btn = document.getElementById('admin-auto-btn');
+      if (btn) {
+        btn.className = 'text-xs font-bold flex items-center gap-1.5 bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg shadow-lg shadow-rose-600/30 transition';
+        btn.innerHTML = `<i data-lucide="square" class="w-3.5 h-3.5 fill-white"></i> <span>Stop Automation</span>`;
+      }
+      lucide.createIcons();
+      runAdminAutoStep();
+    }
+
+    function stopAdminAutomation() {
+      adminAutoRunning = false;
+      if (adminAutoTimer) {
+        clearTimeout(adminAutoTimer);
+        adminAutoTimer = null;
+      }
+      const btn = document.getElementById('admin-auto-btn');
+      if (btn) {
+        btn.className = 'text-xs font-bold flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition';
+        btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> <span>Start Automation</span>`;
+      }
+      lucide.createIcons();
+    }
+
+    function runAdminAutoStep() {
+      if (!adminAutoRunning) return;
+
+      const cpiList = [0.75, 0.80, 0.85, 0.90, 0.95, 1.00, 1.15, 1.25];
+      const durList = ['6m 15s', '6m 45s', '7m 10s', '7m 45s', '8m 20s', '8m 55s'];
+      const catList = ['Consumer Electronics', 'Retail & Shopping', 'Food & Beverage', 'Media & Entertainment', 'Lifestyle & Fitness', 'Healthcare & Wellness', 'Finance & Banking'];
+
+      const rNum = Math.floor(1000 + Math.random() * 9000);
+      const rUid = Math.floor(100000 + Math.random() * 900000);
+      const rawCpi = cpiList[Math.floor(Math.random() * cpiList.length)];
+      const dur = durList[Math.floor(Math.random() * durList.length)];
+      const cat = catList[Math.floor(Math.random() * catList.length)];
+      const timeStr = new Date().toTimeString().split(' ')[0];
+
+      const newEntry = {
+        id: 'ZAM-' + rNum + '-INX',
+        uid: 'RESP-' + rUid + '-IX',
+        category: cat,
+        duration: dur,
+        reward: '$' + rawCpi.toFixed(2),
+        cpi: rawCpi,
+        points: String(Math.round(rawCpi * 100)),
+        time: timeStr,
+        status: 'Verified',
+        _isNew: true
+      };
+
+      completesList.unshift(newEntry);
+      if (completesList.length > 200) completesList = completesList.slice(0, 200);
+      saveCompletes();
+
+      if (typeof isFirebaseConfigured !== 'undefined' && isFirebaseConfigured && db) {
+        db.collection('completes').add({
+          id: newEntry.id,
+          uid: newEntry.uid,
+          category: newEntry.category,
+          duration: newEntry.duration,
+          reward: newEntry.reward,
+          cpi: newEntry.cpi,
+          points: newEntry.points,
+          time: newEntry.time,
+          status: 'Verified',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then((docRef) => {
+          newEntry._docId = docRef.id;
+        }).catch(console.error);
+      }
+
+      adminAutoTimer = setTimeout(() => {
+        if (adminAutoRunning) runAdminAutoStep();
+      }, 3500);
     }
 
     window.addEventListener('storage', (e) => {
